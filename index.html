@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A1F44">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NEXSOLAR — Solar Design & Installation Management | NEXARCH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#0A1F44; --navy2:#0B1F3A; --panel:#0E2650; --panel2:#123061; --line:#1C3A6E;
+  --cyan:#00C2D1; --cyan2:#00B8D9; --yellow:#FFD60A; --sun:#FFB020;
+  --ok:#2FD672; --warn:#FFB020; --bad:#FF5A6E; --ink:#EAF2FF; --dim:#8FA6CC; --mute:#5D7399;
+  --font-d:'Chakra Petch',sans-serif; --font-b:'Inter',sans-serif; --font-m:'JetBrains Mono',monospace;
+  --r:12px; --r-sm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--font-b);background:var(--navy);color:var(--ink);font-size:14px;overflow:hidden}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+h1,h2,h3,h4{font-family:var(--font-d);letter-spacing:.02em}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select,textarea{font-family:inherit;font-size:14px;background:var(--navy2);border:1px solid var(--line);color:var(--ink);border-radius:var(--r-sm);padding:9px 12px;width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;display:block;margin:10px 0 4px;font-family:var(--font-d)}
+.mono{font-family:var(--font-m)}
+.hex{width:34px;height:38px;background:linear-gradient(160deg,var(--cyan),#0077B6);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;color:#03141f;font-size:17px;flex:0 0 auto}
+/* ===== login ===== */
+#loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:
+  radial-gradient(1100px 500px at 80% -10%, rgba(255,214,10,.10), transparent 60%),
+  radial-gradient(900px 600px at 10% 110%, rgba(0,194,209,.14), transparent 60%), var(--navy);z-index:200;padding:20px}
+.loginCard{width:100%;max-width:400px;background:var(--navy2);border:1px solid var(--line);border-radius:16px;padding:30px 26px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.loginCard .brandRow{display:flex;gap:12px;align-items:center;margin-bottom:4px}
+.loginCard h1{font-size:24px;color:#fff}
+.loginCard h1 span{color:var(--yellow)}
+.tagline{font-family:var(--font-d);font-size:10px;letter-spacing:.28em;color:var(--cyan);text-transform:uppercase;margin:6px 0 18px}
+.sunArc{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--yellow),var(--sun) 40%,var(--cyan));margin:14px 0 4px;box-shadow:0 0 18px rgba(255,214,10,.35)}
+/* ===== shell ===== */
+#app{display:none;height:100%;height:100dvh;flex-direction:column}
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy2);border-bottom:1px solid var(--line);flex:0 0 auto}
+#topbar .t{font-family:var(--font-d);font-weight:700;font-size:16px;color:#fff;white-space:nowrap}
+#topbar .t span{color:var(--yellow)}
+#topbar .sub{font-size:10px;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;font-family:var(--font-d)}
+.chip{font-family:var(--font-m);font-size:10px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.chip.on{color:var(--ok);border-color:rgba(47,214,114,.4)}
+.chip.off{color:var(--warn);border-color:rgba(255,176,32,.4)}
+.chip.lic{color:var(--yellow);border-color:rgba(255,214,10,.4)}
+#shellBody{display:flex;flex:1;min-height:0}
+#sidenav{width:200px;background:var(--navy2);border-right:1px solid var(--line);padding:10px 8px;overflow-y:auto;flex:0 0 auto}
+.navBtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:var(--r-sm);background:transparent;color:var(--dim);font-family:var(--font-d);font-size:13px;text-align:left;margin-bottom:2px}
+.navBtn .ic{font-size:15px;width:20px;text-align:center}
+.navBtn.act{background:linear-gradient(90deg,rgba(0,194,209,.16),transparent);color:var(--cyan);box-shadow:inset 2px 0 0 var(--cyan)}
+.navBtn:hover{color:var(--ink)}
+.navBtn.lock{opacity:.4}
+#main{flex:1;overflow-y:auto;padding:16px;min-width:0;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+@media(min-width:861px){#main{padding-bottom:16px}}
+#bottomnav{display:none;position:fixed;left:0;right:0;bottom:0;background:rgba(11,31,58,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);z-index:80;padding-bottom:env(safe-area-inset-bottom)}
+#bottomnav .row{display:flex;overflow-x:auto}
+#bottomnav .navBtn{flex-direction:column;gap:3px;font-size:9px;padding:8px 10px;min-width:64px;align-items:center;margin:0;border-radius:0}
+#bottomnav .navBtn.act{box-shadow:inset 0 2px 0 var(--cyan);background:transparent}
+@media(max-width:860px){#sidenav{display:none}#bottomnav{display:block}}
+/* ===== components ===== */
+.page{display:none;animation:fade .18s ease}
+.page.act{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+.pageHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pageHead h2{font-size:19px;color:#fff}
+.pageHead .eyebrow{font-family:var(--font-d);font-size:10px;letter-spacing:.25em;color:var(--cyan);text-transform:uppercase;width:100%}
+.card{background:var(--navy2);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h3{font-size:13px;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:860px){.grid3,.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid2.tight{grid-template-columns:1fr}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.kpi .v{font-family:var(--font-d);font-size:22px;font-weight:700;color:#fff}
+.kpi .v.y{color:var(--yellow)}.kpi .v.c{color:var(--cyan)}.kpi .v.g{color:var(--ok)}.kpi .v.r{color:var(--bad)}
+.kpi .l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.btn{background:var(--cyan);color:#03141f;font-family:var(--font-d);font-weight:700;font-size:13px;padding:10px 16px;border-radius:var(--r-sm);letter-spacing:.03em}
+.btn:active{transform:translateY(1px)}
+.btn.y{background:var(--yellow)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--cyan)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.sm{padding:6px 11px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--font-d);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid rgba(28,58,110,.5);vertical-align:middle}
+tr:hover td{background:rgba(0,194,209,.04)}
+.tableWrap{overflow-x:auto}
+.tag{font-family:var(--font-m);font-size:10px;padding:2px 8px;border-radius:99px;display:inline-block;white-space:nowrap}
+.tag.cyan{background:rgba(0,194,209,.14);color:var(--cyan)}
+.tag.yel{background:rgba(255,214,10,.14);color:var(--yellow)}
+.tag.ok{background:rgba(47,214,114,.14);color:var(--ok)}
+.tag.warn{background:rgba(255,176,32,.14);color:var(--warn)}
+.tag.bad{background:rgba(255,90,110,.14);color:var(--bad)}
+.tag.dim{background:rgba(93,115,153,.18);color:var(--dim)}
+.toolRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolRow input,.toolRow select{width:auto;flex:1;min-width:120px}
+/* modal */
+#modalWrap{position:fixed;inset:0;background:rgba(4,12,26,.7);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:150}
+#modalWrap.open{display:flex}
+@media(min-width:640px){#modalWrap{align-items:center}}
+#modal{background:var(--navy2);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;padding:18px}
+@media(min-width:640px){#modal{border-radius:16px}}
+#modal h3{font-size:15px;color:#fff;margin-bottom:8px}
+.modalBtns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* toast */
+#toasts{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:6px;width:min(92vw,420px)}
+.toast{background:var(--panel2);border:1px solid var(--cyan);border-radius:var(--r-sm);padding:10px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:fade .2s ease}
+.toast.err{border-color:var(--bad)}
+.toast.warn{border-color:var(--warn)}
+/* kanban */
+.kanban{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.kcol{flex:0 0 230px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px;min-height:120px}
+.kcol h4{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;justify-content:space-between}
+.kcard{background:var(--navy2);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--cyan)}
+.kcard:hover{border-color:var(--cyan)}
+.kcard .nm{font-weight:600;font-size:13px}
+.kcard .mt{font-size:11px;color:var(--dim);margin-top:3px;font-family:var(--font-m)}
+/* design studio irradiance strip */
+.sunStrip{display:flex;align-items:flex-end;gap:3px;height:52px;margin:8px 0}
+.sunStrip i{flex:1;background:linear-gradient(180deg,var(--yellow),var(--sun));border-radius:2px 2px 0 0;opacity:.9;min-width:4px}
+.roofGrid{display:grid;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px;touch-action:manipulation}
+.roofCell{aspect-ratio:1.6;background:var(--navy);border:1px dashed var(--line);border-radius:3px;cursor:pointer}
+.roofCell.on{background:linear-gradient(160deg,#0a3a63,#0e5d86);border:1px solid var(--cyan);box-shadow:inset 0 0 0 1px rgba(0,194,209,.4)}
+canvas.chart{width:100%;height:220px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm)}
+/* scanner */
+#scanVideoWrap{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--cyan);background:#000}
+#scanVideo{width:100%;max-height:300px;object-fit:cover;display:block}
+#scanLine{position:absolute;left:8%;right:8%;height:2px;background:var(--yellow);box-shadow:0 0 12px var(--yellow);animation:scan 1.6s ease-in-out infinite;top:20%}
+@keyframes scan{50%{top:78%}}
+.feedItem{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(28,58,110,.5);font-size:13px}
+.feedItem .when{font-family:var(--font-m);font-size:10px;color:var(--mute);flex:0 0 auto;padding-top:2px}
+pre.codeBox{background:#07142c;border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;font-family:var(--font-m);font-size:11px;overflow-x:auto;max-height:340px;color:#9fd8ff;white-space:pre}
+.featLock{text-align:center;padding:40px 16px;color:var(--dim)}
+.featLock .big{font-size:34px;margin-bottom:8px}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--dim)}
+.progress{height:6px;background:var(--panel);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--yellow))}
+
+/* circuit / SLD / simulation */
+#ccSLD{display:block;min-width:680px}
+.sldBox{fill:#0E2650;stroke:#1C3A6E;rx:6}
+.sldBox.hot{stroke:var(--cyan)}
+.sldBox.fault{stroke:var(--bad);stroke-dasharray:4 3}
+.sldTxt{fill:#EAF2FF;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:600}
+.sldSub{fill:#8FA6CC;font-family:'JetBrains Mono',monospace;font-size:9px}
+.wire{stroke:#2a4a80;stroke-width:2.5;fill:none}
+.wire.on{stroke:var(--yellow);stroke-dasharray:7 6;animation:wflow 1s linear infinite}
+.wire.on.ac{stroke:var(--cyan)}
+.wire.on.chg{stroke:var(--ok)}
+.wire.rev{animation-direction:reverse}
+.wire.dead{stroke:#233; opacity:.5}
+@keyframes wflow{to{stroke-dashoffset:-13}}
+@media (prefers-reduced-motion: reduce){.wire.on{animation:none}}
+@media print{
+  body{overflow:visible;background:#fff;color:#111}
+  #topbar,#sidenav,#bottomnav,.noPrint{display:none!important}
+  #main{overflow:visible;padding:0}
+  .card{border:1px solid #ccc;background:#fff}
+  .kpi .v,h1,h2,h3{color:#0A1F44!important}
+}
+</style>
+</head>
+<body>
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="loginCard">
+    <div class="brandRow"><div class="hex">N</div><div><h1>NEX<span>SOLAR</span></h1><div class="sub" style="font-size:10px;color:var(--dim)">NEXARCH Systems Engineering</div></div></div>
+    <div class="tagline">Precision · Scale · Control</div>
+    <div style="font-size:12px;color:var(--dim)">Solar Power Design & Installation Management System</div>
+    <div class="sunArc"></div>
+    <label>Username</label><input id="loginUser" autocomplete="username" placeholder="admin">
+    <label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="loginErr" style="color:var(--bad);font-size:12px;margin-top:8px;display:none"></div>
+    <button class="btn y" style="width:100%;margin-top:16px" onclick="doLogin()">Sign in</button>
+    <div style="font-size:11px;color:var(--mute);margin-top:12px;text-align:center">First run: <span class="mono">admin / nexsolar</span> — change it in Users.</div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app">
+  <div id="topbar">
+    <div class="hex" style="width:26px;height:30px;font-size:13px">N</div>
+    <div><div class="t">NEX<span>SOLAR</span></div></div>
+    <div style="flex:1"></div>
+    <span class="chip lic" id="licChip">LITE</span>
+    <span class="chip" id="netChip">OFFLINE</span>
+    <span class="chip" id="syncChip">LOCAL</span>
+    <button class="btn ghost sm" onclick="logout()">⎋</button>
+  </div>
+  <div id="shellBody">
+    <nav id="sidenav"></nav>
+    <main id="main">
+
+      <!-- DASHBOARD -->
+      <section class="page" id="pg-dash">
+        <div class="pageHead"><div class="eyebrow">Command Center</div><h2 id="dashHello">Dashboard</h2></div>
+        <div class="grid4" id="dashKpis"></div>
+        <div class="grid2 tight" style="margin-top:12px;grid-template-columns:1.4fr 1fr">
+          <div class="card"><h3>◈ Revenue — last 12 weeks</h3><canvas class="chart" id="dashRevChart"></canvas></div>
+          <div class="card"><h3>⬡ CYRA Overwatch</h3><div id="dashCyraFeed" style="max-height:230px;overflow-y:auto"></div></div>
+        </div>
+        <div class="card"><h3>◈ Project pipeline</h3><div id="dashPipe"></div></div>
+      </section>
+
+      <!-- DESIGN STUDIO -->
+      <section class="page" id="pg-design">
+        <div class="pageHead"><div class="eyebrow">Engineering</div><h2>Design Studio</h2>
+          <div style="flex:1"></div>
+          <button class="btn sm ghost noPrint" onclick="dsLoadSaved()">Open saved</button>
+          <button class="btn sm noPrint" onclick="dsSave()">Save design</button>
+        </div>
+        <div class="grid2 tight" style="grid-template-columns:1fr 1fr;align-items:start">
+          <div>
+            <div class="card">
+              <h3>① Client & site</h3>
+              <div class="grid2">
+                <div><label>Client name</label><input id="dsClient" placeholder="Juan Dela Cruz"></div>
+                <div><label>Location</label><input id="dsLoc" value="Buru-un, Iligan City"></div>
+                <div><label>System type</label><select id="dsType" onchange="dsCalc()"><option value="grid">Grid-tie (net metering)</option><option value="hybrid">Hybrid (grid + battery)</option><option value="off">Off-grid</option></select></div>
+                <div><label>Peak sun hours (PSH)</label><input id="dsPSH" type="number" step="0.1" value="4.8" onchange="dsCalc()"></div>
+                <div><label>Electricity rate ₱/kWh</label><input id="dsRate" type="number" step="0.01" value="11.50" onchange="dsCalc()"></div>
+                <div><label>System efficiency</label><input id="dsEff" type="number" step="0.01" value="0.80" onchange="dsCalc()"></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>② Load analysis</h3>
+              <div class="tableWrap"><table id="dsLoadTable"><thead><tr><th>Appliance</th><th>W</th><th>Qty</th><th>Hrs/day</th><th>kWh</th><th></th></tr></thead><tbody></tbody></table></div>
+              <div class="toolRow" style="margin-top:8px">
+                <input id="dsApp" placeholder="Appliance" style="flex:2">
+                <input id="dsW" type="number" placeholder="W" style="max-width:70px">
+                <input id="dsQty" type="number" placeholder="Qty" value="1" style="max-width:60px">
+                <input id="dsHrs" type="number" step="0.5" placeholder="Hrs" style="max-width:64px">
+                <button class="btn sm" onclick="dsAddLoad()">Add</button>
+              </div>
+              <div style="margin-top:8px;font-family:var(--font-m);font-size:12px;color:var(--dim)">Daily energy: <b style="color:var(--yellow)" id="dsDaily">0.00 kWh</b> · Peak load: <b style="color:var(--cyan)" id="dsPeak">0 W</b></div>
+            </div>
+            <div class="card">
+              <h3>③ Equipment selection</h3>
+              <div class="grid2">
+                <div><label>Panel wattage (Wp)</label><input id="dsPanelW" type="number" value="580" onchange="dsCalc()"></div>
+                <div><label>Panel Voc (V)</label><input id="dsVoc" type="number" step="0.1" value="51.5" onchange="dsCalc()"></div>
+                <div><label>Inverter max DC volt</label><input id="dsMaxV" type="number" value="600" onchange="dsCalc()"></div>
+                <div><label>Battery unit (kWh)</label><input id="dsBattKwh" type="number" step="0.1" value="5.12" onchange="dsCalc()"></div>
+                <div><label>Battery DoD</label><input id="dsDoD" type="number" step="0.05" value="0.9" onchange="dsCalc()"></div>
+                <div><label>Autonomy (days)</label><input id="dsAut" type="number" step="0.5" value="1" onchange="dsCalc()"></div>
+                <div><label>Install rate ₱/Wp</label><input id="dsCostW" type="number" step="0.5" value="45" onchange="dsCalc()"></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <h3>④ System sizing <span class="tag cyan">auto</span></h3>
+              <div class="grid2" id="dsResults"></div>
+              <div id="dsStringNote" style="font-size:12px;color:var(--dim);margin-top:8px"></div>
+            </div>
+            <div class="card">
+              <h3>⑤ Daily solar profile</h3>
+              <div class="sunStrip" id="dsSunStrip"></div>
+              <div style="font-size:11px;color:var(--mute);font-family:var(--font-m)">05:00 → 19:00 · modeled irradiance × array size</div>
+            </div>
+            <div class="card">
+              <h3>⑥ Roof layout <span class="tag dim" id="dsRoofCount">0 panels placed</span></h3>
+              <div class="toolRow"><label style="margin:0">Cols</label><input id="dsRoofCols" type="number" value="8" style="max-width:64px" onchange="dsRoofBuild()"><label style="margin:0">Rows</label><input id="dsRoofRows" type="number" value="5" style="max-width:64px" onchange="dsRoofBuild()"><button class="btn sm ghost" onclick="dsRoofAuto()">Auto-fill</button><button class="btn sm ghost" onclick="dsRoofClear()">Clear</button></div>
+              <div class="roofGrid" id="dsRoof"></div>
+            </div>
+            <div class="card">
+              <h3>⑦ Financials</h3>
+              <div class="grid2" id="dsFin"></div>
+              <button class="btn y noPrint" style="width:100%;margin-top:12px" onclick="dsProposal()">Generate proposal → print / PDF</button>
+              <button class="btn ghost noPrint" style="width:100%;margin-top:8px" onclick="dsToProject()">Create project from design</button>
+              <button class="btn ghost noPrint" style="width:100%;margin-top:8px" onclick="go('circuit')">⚡ Circuit diagram, BOQ & simulation</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CIRCUIT / BOQ / SIMULATION -->
+      <section class="page" id="pg-circuit">
+        <div class="pageHead"><div class="eyebrow">Electrical engineering</div><h2>Circuit · BOQ · Simulation</h2>
+          <div style="flex:1"></div>
+          <button class="btn sm ghost noPrint" onclick="go('design')">← Design Studio</button>
+          <button class="btn sm noPrint" onclick="ccGenerate()">⟳ Generate from design</button>
+        </div>
+        <div class="card">
+          <h3>⚡ Circuit diagram <span class="tag dim" id="ccSysTag">no design loaded</span></h3>
+          <div class="toolRow noPrint">
+            <button id="ccVsld" class="btn sm" onclick="ccSetView('sld')">Single-line + power flow</button>
+            <button id="ccVdet" class="btn sm ghost" onclick="ccSetView('detail')">Detailed wiring diagram</button>
+            <button class="btn sm ghost" onclick="ccPrintDiagram()">🖶 Print diagram</button>
+          </div>
+          <div id="ccSLDWrap" style="overflow-x:auto;background:#07142c;border:1px solid var(--line);border-radius:var(--r-sm)"></div>
+          <div class="toolRow noPrint" style="margin-top:10px">
+            <button class="btn sm y" id="ccPlayBtn" onclick="ccPlay()">▶ Run simulation</button>
+            <label style="margin:0">Hour</label>
+            <input type="range" id="ccHour" min="0" max="23.5" step="0.5" value="6" style="flex:2;min-width:140px" oninput="ccSetHour(this.value)">
+            <span class="mono" id="ccClock" style="min-width:52px;color:var(--yellow)">06:00</span>
+            <select id="ccSpeed" style="max-width:90px"><option value="600">×1</option><option value="250" selected>×2</option><option value="90">×5</option></select>
+          </div>
+          <div class="toolRow noPrint">
+            <span style="font-size:11px;color:var(--dim);font-family:var(--font-d);letter-spacing:.08em">FAULT INJECTION</span>
+            <button class="btn sm ghost" id="ccFGrid" onclick="ccFault('grid')">⌁ Grid outage</button>
+            <button class="btn sm ghost" id="ccFStr" onclick="ccFault('string')">✕ String fault</button>
+            <button class="btn sm ghost" id="ccFTrip" onclick="ccFault('trip')">◫ AC breaker trip</button>
+          </div>
+          <div class="grid4" id="ccGauges"></div>
+          <div id="ccAlarms" style="margin-top:8px"></div>
+        </div>
+        <div class="grid2 tight">
+          <div class="card"><h3>▤ Wire & protection sizing</h3><div class="tableWrap"><table id="ccWires"><thead><tr><th>Segment</th><th>I design (A)</th><th>Cable</th><th>V-drop</th><th>Protection</th></tr></thead><tbody></tbody></table></div>
+            <div class="toolRow" style="margin-top:8px"><label style="margin:0">DC run (m)</label><input id="ccLenDC" type="number" value="15" style="max-width:70px" onchange="ccGenerate(true)"><label style="margin:0">AC run (m)</label><input id="ccLenAC" type="number" value="10" style="max-width:70px" onchange="ccGenerate(true)"></div>
+          </div>
+          <div class="card"><h3>◔ 24-hour energy simulation</h3><canvas class="chart" id="ccChart"></canvas>
+            <div style="font-size:11px;color:var(--mute);font-family:var(--font-m);margin-top:4px"><span style="color:#FFD60A">■</span> PV kW &nbsp; <span style="color:#00C2D1">■</span> Load kW &nbsp; <span style="color:#2FD672">■</span> Battery SOC %</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>▦ Bill of Quantities <span class="tag yel" id="ccBoqTotalTag">₱0</span></h3>
+          <div class="tableWrap"><table id="ccBoq"><thead><tr><th>#</th><th>Description</th><th>Unit</th><th>Qty</th><th>Unit ₱</th><th>Amount ₱</th><th></th></tr></thead><tbody></tbody></table></div>
+          <div class="toolRow noPrint" style="margin-top:10px">
+            <button class="btn sm ghost" onclick="ccBoqAddRow()">+ Row</button>
+            <button class="btn sm ghost" onclick="ccBoqOpenSaved()">Open saved</button>
+            <button class="btn sm ghost" onclick="ccBoqPrint()">🖶 Print BOQ</button>
+            <button class="btn sm ghost" onclick="ccBoqSave()">Save BOQ</button>
+            <button class="btn sm" onclick="ccBoqToProject()">Attach to project</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section class="page" id="pg-projects">
+        <div class="pageHead"><div class="eyebrow">Delivery</div><h2>Installation Projects</h2>
+          <div style="flex:1"></div><button class="btn sm" onclick="prNew()">+ New project</button></div>
+        <div class="kanban" id="prKanban"></div>
+        <div class="card">
+          <h3>All projects — open · update · delete</h3>
+          <div class="toolRow"><input id="prSearch" placeholder="Search name, client, stage…" oninput="prRender()"></div>
+          <div class="tableWrap"><table id="prTable"><thead><tr><th>Project</th><th>Client</th><th>kWp</th><th>Value ₱</th><th>Stage</th><th>Progress</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section class="page" id="pg-inv">
+        <div class="pageHead"><div class="eyebrow">Warehouse</div><h2>Inventory</h2>
+          <div style="flex:1"></div>
+          <button class="btn sm ghost" onclick="scanOpen('inv')">▣ Scan</button>
+          <button class="btn sm" onclick="invNew()">+ Item</button></div>
+        <div class="grid4" id="invKpis"></div>
+        <div class="card" style="margin-top:12px">
+          <div class="toolRow"><input id="invSearch" placeholder="Search items, SKU, serials…" oninput="invRender()"><select id="invCat" onchange="invRender()" style="max-width:160px"><option value="">All categories</option></select></div>
+          <div class="tableWrap"><table id="invTable"><thead><tr><th>SKU</th><th>Item</th><th>Category</th><th>Stock</th><th>Unit ₱</th><th>RFID/Serial</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- POS -->
+      <section class="page" id="pg-pos">
+        <div class="pageHead"><div class="eyebrow">Sales counter</div><h2>Point of Sale</h2>
+          <div style="flex:1"></div><button class="btn sm ghost" onclick="scanOpen('pos')">▣ Scan to cart</button></div>
+        <div class="grid2 tight" style="grid-template-columns:1.2fr 1fr;align-items:start">
+          <div class="card"><h3>Catalog</h3>
+            <input placeholder="Search…" id="posSearch" oninput="posRenderCatalog()" style="margin-bottom:10px">
+            <div id="posCatalog" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-height:420px;overflow-y:auto"></div>
+          </div>
+          <div class="card"><h3>Cart</h3>
+            <div id="posCart"></div>
+            <div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px;font-size:13px" id="posTotals"></div>
+            <label class="switch" style="margin-top:8px"><input type="checkbox" id="posSC" onchange="posRenderCart()"> SC/PWD discount (RA 9994, 20% + VAT-exempt)</label>
+            <label>Payment method</label>
+            <select id="posPay"><option>Cash</option><option>GCash</option><option>BPI Transfer</option><option>Card</option></select>
+            <button class="btn y" style="width:100%;margin-top:12px" onclick="posCheckout()">Complete sale</button>
+          </div>
+        </div>
+        <div class="card"><h3>Recent sales</h3><div class="tableWrap"><table id="posSales"><thead><tr><th>OR#</th><th>When</th><th>Items</th><th>Total ₱</th><th>Pay</th><th></th></tr></thead><tbody></tbody></table></div></div>
+      </section>
+
+      <!-- BI -->
+      <section class="page" id="pg-bi">
+        <div class="pageHead"><div class="eyebrow">Business intelligence</div><h2>BI & Analytics</h2></div>
+        <div class="grid4" id="biKpis"></div>
+        <div class="grid2 tight" style="margin-top:12px">
+          <div class="card"><h3>Revenue trend + CYRA forecast</h3><canvas class="chart" id="biRev"></canvas></div>
+          <div class="card"><h3>Pipeline funnel</h3><canvas class="chart" id="biFunnel"></canvas></div>
+          <div class="card"><h3>Inventory value by category</h3><canvas class="chart" id="biInv"></canvas></div>
+          <div class="card"><h3>Installed capacity (kWp) by month</h3><canvas class="chart" id="biKwp"></canvas></div>
+        </div>
+      </section>
+
+      <!-- CYRA AI -->
+      <section class="page" id="pg-cyra">
+        <div class="pageHead"><div class="eyebrow">AI / ML Overwatch</div><h2>CYRA Intelligence</h2>
+          <div style="flex:1"></div><button class="btn sm" onclick="cyraRun(true)">Run analysis now</button></div>
+        <div class="grid3" id="cyraKpis"></div>
+        <div class="grid2 tight" style="margin-top:12px">
+          <div class="card"><h3>⬡ Findings & anomalies</h3><div id="cyraFindings" style="max-height:340px;overflow-y:auto"></div></div>
+          <div class="card"><h3>⬡ Lead scoring (logistic model)</h3><div class="tableWrap"><table id="cyraLeads"><thead><tr><th>Project</th><th>Stage</th><th>₱ value</th><th>Score</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+        <div class="card"><h3>30-day energy production forecast (Holt smoothing)</h3><canvas class="chart" id="cyraFc"></canvas></div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="page" id="pg-notif">
+        <div class="pageHead"><div class="eyebrow">Comms</div><h2>Notifications</h2></div>
+        <div class="card">
+          <h3>Compose</h3>
+          <div class="grid2">
+            <div><label>Recipient name</label><input id="ntName" placeholder="Client name"></div>
+            <div><label>Phone (63…)</label><input id="ntPhone" placeholder="639051234567"></div>
+            <div><label>Email</label><input id="ntEmail" placeholder="client@email.com"></div>
+            <div><label>Template</label><select id="ntTpl" onchange="ntApplyTpl()"></select></div>
+          </div>
+          <label>Message</label><textarea id="ntMsg" rows="4"></textarea>
+          <div class="toolRow" style="margin-top:10px">
+            <button class="btn sm" onclick="ntSend('email')">✉ Email</button>
+            <button class="btn sm" onclick="ntSend('sms')">▤ SMS</button>
+            <button class="btn sm ghost" onclick="ntSend('whatsapp')">◍ WhatsApp</button>
+            <button class="btn sm ghost" onclick="ntSend('viber')">◍ Viber</button>
+            <button class="btn sm ghost" onclick="ntSend('messenger')">◍ Messenger</button>
+          </div>
+          <div style="font-size:11px;color:var(--mute);margin-top:6px">Email & SMS send through the Apps Script backend (MailApp / Semaphore). WhatsApp, Viber and Messenger open the app with the message pre-filled.</div>
+        </div>
+        <div class="card"><h3>Log</h3><div id="ntLog" style="max-height:280px;overflow-y:auto"></div></div>
+      </section>
+
+      <!-- INTEGRATIONS -->
+      <section class="page" id="pg-integ">
+        <div class="pageHead"><div class="eyebrow">Connector hub</div><h2>Integrations</h2></div>
+        <div class="card">
+          <h3>Outbound webhooks</h3>
+          <div style="font-size:12px;color:var(--dim);margin-bottom:8px">Push events (sale.completed, project.stage_changed, stock.low) to other systems — ERP, MES, n8n, Zapier, Node-RED.</div>
+          <div id="whList"></div>
+          <div class="toolRow"><input id="whUrl" placeholder="https://hooks.example.com/…" style="flex:2"><select id="whEvent" style="max-width:200px"><option>all</option><option>sale.completed</option><option>project.stage_changed</option><option>stock.low</option><option>design.saved</option></select><button class="btn sm" onclick="whAdd()">Add</button></div>
+        </div>
+        <div class="card">
+          <h3>Inbound REST API</h3>
+          <div style="font-size:12px;color:var(--dim)">The Apps Script Web App doubles as a REST endpoint. Other systems can <span class="mono">GET ?api=inventory|projects|sales&key=API_KEY</span> or <span class="mono">POST {action:"upsert", table, row}</span>.</div>
+          <label>API key</label>
+          <div class="toolRow"><input id="apiKey" class="mono" readonly><button class="btn sm ghost" onclick="apiKeyRegen()">Regenerate</button><button class="btn sm ghost" onclick="copyText(el('apiKey').value,'API key copied')">Copy</button></div>
+        </div>
+        <div class="card">
+          <h3>Data exchange</h3>
+          <div class="toolRow">
+            <button class="btn sm" onclick="exportXLSX()">⬇ Export Excel (.xlsx)</button>
+            <button class="btn sm ghost" onclick="el('xlsxFile').click()">⬆ Import Excel</button>
+            <button class="btn sm ghost" onclick="exportJSON()">⬇ Backup JSON</button>
+            <button class="btn sm ghost" onclick="el('jsonFile').click()">⬆ Restore JSON</button>
+            <input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importXLSX(this)">
+            <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="importJSON(this)">
+          </div>
+          <div style="font-size:12px;color:var(--dim)">Excel workbook mirrors the Google Sheet schema — use it as the local database when working fully offline.</div>
+        </div>
+      </section>
+
+      <!-- LICENSING -->
+      <section class="page" id="pg-lic">
+        <div class="pageHead"><div class="eyebrow">Commercial</div><h2>License Manager</h2></div>
+        <div class="grid3" id="licCards"></div>
+        <div class="card" style="margin-top:12px">
+          <h3>Activate license</h3>
+          <div class="toolRow"><input id="licKeyIn" class="mono" placeholder="NEXSOLAR-PRO-20271231-XXXXXXXX"><button class="btn sm y" onclick="licActivate()">Activate</button></div>
+          <div id="licStatus" style="font-size:12px;color:var(--dim);margin-top:6px"></div>
+        </div>
+        <div class="card" id="licIssuerCard">
+          <h3>Issue license key <span class="tag yel">NEXARCH admin</span></h3>
+          <div class="grid3">
+            <div><label>Package</label><select id="licGenTier"><option>LITE</option><option>PRO</option><option>ENTERPRISE</option></select></div>
+            <div><label>Expiry</label><input id="licGenExp" type="date"></div>
+            <div><label>&nbsp;</label><button class="btn sm" style="width:100%" onclick="licGenerate()">Generate</button></div>
+          </div>
+          <div id="licGenOut" class="mono" style="margin-top:8px;font-size:13px;color:var(--yellow);word-break:break-all"></div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section class="page" id="pg-users">
+        <div class="pageHead"><div class="eyebrow">Security · RBAC</div><h2>Users & Roles</h2>
+          <div style="flex:1"></div><button class="btn sm" onclick="usNew()">+ User</button></div>
+        <div class="card"><div class="tableWrap"><table id="usTable"><thead><tr><th>User</th><th>Role</th><th>Modules</th><th></th></tr></thead><tbody></tbody></table></div></div>
+        <div class="card"><h3>Role matrix</h3><div id="usMatrix" style="font-size:12px;color:var(--dim)"></div></div>
+      </section>
+
+      <!-- SETTINGS / SYNC -->
+      <section class="page" id="pg-set">
+        <div class="pageHead"><div class="eyebrow">Platform</div><h2>Settings & Cloud Sync</h2></div>
+        <div class="card">
+          <h3>Google Sheets backend</h3>
+          <label>Apps Script Web App URL</label>
+          <input id="setGasUrl" placeholder="https://script.google.com/macros/s/…/exec" class="mono">
+          <div class="toolRow" style="margin-top:10px">
+            <button class="btn sm" onclick="saveSettings();syncNow()">Save & sync now</button>
+            <button class="btn sm ghost" onclick="syncNow()">Sync now</button>
+            <span class="chip" id="setSyncInfo">never synced</span>
+          </div>
+          <div style="font-size:12px;color:var(--dim);margin-top:6px">Offline-first: every change queues in this device and pushes when online. Queue: <b class="mono" id="setQueueN">0</b></div>
+        </div>
+        <div class="card">
+          <h3>SMS gateway (Semaphore)</h3>
+          <div class="grid2"><div><label>API key</label><input id="setSemKey" class="mono" placeholder="stored in Script Properties too"></div><div><label>Sender name</label><input id="setSemSender" value="NEXSOLAR"></div></div>
+        </div>
+        <div class="card">
+          <h3>Company profile</h3>
+          <div class="grid2">
+            <div><label>Company</label><input id="setCo" value="NEXARCH Systems Engineering"></div>
+            <div><label>Contact</label><input id="setContact" value="+63 905 251 5051 · resitch@gmail.com"></div>
+          </div>
+          <button class="btn sm" style="margin-top:10px" onclick="saveSettings()">Save settings</button>
+        </div>
+        <div class="card">
+          <h3>Backend code (Code.gs) — copy into Apps Script</h3>
+          <div class="toolRow"><button class="btn sm ghost" onclick="copyText(el('gasCode').textContent,'Code.gs copied')">Copy Code.gs</button><span style="font-size:11px;color:var(--mute)">Extensions → Apps Script → paste → Deploy → Web app (execute as me, anyone with link)</span></div>
+          <pre class="codeBox" id="gasCode"></pre>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <nav id="bottomnav"><div class="row" id="bottomnavRow"></div></nav>
+</div>
+
+<!-- modal / scanner / toasts -->
+<div id="modalWrap" onclick="if(event.target===this)modalClose()"><div id="modal"></div></div>
+<div id="toasts"></div>
+<script>
+/* =========================================================
+   NEXSOLAR · NEXARCH Systems Engineering · CYRABELL stack
+   Single-file PWA · Google Sheets/Apps Script backend
+   ========================================================= */
+'use strict';
+const el = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const peso = n => '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const uid = p => (p||'ID') + '-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,6).toUpperCase();
+const nowISO = () => new Date().toISOString();
+
+/* ---------------- store (localStorage, offline-first) ---------------- */
+const DB_KEY = 'NEXSOLAR_DB_V1';
+const DEFAULTS = {
+  settings:{gasUrl:'',semKey:'',semSender:'NEXSOLAR',company:'NEXARCH Systems Engineering',contact:'+63 905 251 5051 · resitch@gmail.com',apiKey:'',lastSync:''},
+  license:{tier:'LITE',key:'',expiry:''},
+  users:[], inventory:[], moves:[], projects:[], sales:[], designs:[], boqs:[], notifLog:[], webhooks:[], cyraLog:[], queue:[]
+};
+let DB = load();
+function load(){ try{ const raw = localStorage.getItem(DB_KEY); if(raw){ const d = JSON.parse(raw); for(const k in DEFAULTS) if(!(k in d)) d[k] = JSON.parse(JSON.stringify(DEFAULTS[k])); return d; } }catch(e){} return JSON.parse(JSON.stringify(DEFAULTS)); }
+function save(){ localStorage.setItem(DB_KEY, JSON.stringify(DB)); el('setQueueN') && (el('setQueueN').textContent = DB.queue.length); }
+function queue(table, action, row){ DB.queue.push({id:uid('Q'), t:nowISO(), table, action, row}); save(); fireWebhooks(table+'.'+action, row); if(navigator.onLine) syncNow(true); }
+
+/* ---------------- toast / modal ---------------- */
+function toast(msg, cls){ const t = document.createElement('div'); t.className = 'toast ' + (cls||''); t.textContent = msg; el('toasts').appendChild(t); setTimeout(()=>t.remove(), 3200); }
+function modal(html){ el('modal').innerHTML = html; el('modalWrap').classList.add('open'); }
+function modalClose(){ el('modalWrap').classList.remove('open'); stopScan(); }
+async function copyText(txt, msg){ try{ await navigator.clipboard.writeText(txt); toast(msg||'Copied'); }catch(e){ toast('Copy failed','err'); } }
+
+/* ---------------- crypto: PBKDF2-SHA256 + SHA-256 ---------------- */
+async function sha256hex(str){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function pbkdf2(pass, saltHex){
+  const salt = saltHex ? Uint8Array.from(saltHex.match(/../g).map(h=>parseInt(h,16))) : crypto.getRandomValues(new Uint8Array(16));
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:120000, hash:'SHA-256'}, km, 256);
+  return { salt:[...salt].map(x=>x.toString(16).padStart(2,'0')).join(''), hash:[...new Uint8Array(bits)].map(x=>x.toString(16).padStart(2,'0')).join('') };
+}
+
+/* ---------------- RBAC ---------------- */
+const ROLES = {
+  Admin:      ['dash','design','circuit','projects','inv','pos','bi','cyra','notif','integ','lic','users','set'],
+  Engineer:   ['dash','design','circuit','projects','inv','cyra','notif'],
+  Sales:      ['dash','design','circuit','projects','pos','notif','bi'],
+  Installer:  ['dash','projects','inv','notif'],
+  Warehouse:  ['dash','inv','notif'],
+  Cashier:    ['dash','pos','notif']
+};
+let SESSION = null;
+
+/* ---------------- Licensing engine ---------------- */
+const LIC_SECRET = 'NEXARCH-CYRABELL-SOLAR-2026'; // pair with issuer; rotate per customer batch in production
+const TIERS = {
+  LITE:       { price:'₱15,000 / yr', color:'dim',  feats:['design','circuit','projects','inv','notif','set','dash','users'], desc:'Design studio, projects, inventory, notifications. 1 user profile pack.' },
+  PRO:        { price:'₱45,000 / yr', color:'cyan', feats:['design','circuit','projects','inv','notif','set','dash','users','pos','bi','integ'], desc:'Everything in LITE + POS, BI dashboards, integration hub, Excel exchange.' },
+  ENTERPRISE: { price:'₱120,000 / yr',color:'yel',  feats:['design','circuit','projects','inv','notif','set','dash','users','pos','bi','integ','cyra','lic'], desc:'Everything in PRO + CYRA AI/ML overwatch, forecasting, lead scoring, license issuing, priority support.' }
+};
+function licFeats(){ return TIERS[DB.license.tier]?.feats || TIERS.LITE.feats; }
+function hasFeat(f){ return licFeats().includes(f) || f==='lic'; }
+async function licMakeKey(tier, expiryYmd){ const payload = `NEXSOLAR-${tier}-${expiryYmd}`; const sig = (await sha256hex(payload + '|' + LIC_SECRET)).slice(0,8).toUpperCase(); return payload + '-' + sig; }
+async function licVerify(key){
+  const m = String(key).trim().toUpperCase().match(/^NEXSOLAR-(LITE|PRO|ENTERPRISE)-(\d{8})-([0-9A-F]{8})$/);
+  if(!m) return {ok:false, why:'Key format not recognized.'};
+  const sig = (await sha256hex(`NEXSOLAR-${m[1]}-${m[2]}` + '|' + LIC_SECRET)).slice(0,8).toUpperCase();
+  if(sig !== m[3]) return {ok:false, why:'Signature check failed.'};
+  const exp = m[2].slice(0,4)+'-'+m[2].slice(4,6)+'-'+m[2].slice(6,8);
+  if(new Date(exp+'T23:59:59') < new Date()) return {ok:false, why:'License expired '+exp+'.'};
+  return {ok:true, tier:m[1], expiry:exp};
+}
+
+/* ---------------- navigation ---------------- */
+const NAV = [
+  ['dash','⌂','Dashboard'],['design','☀','Design Studio'],['circuit','⚡','Circuit · BOQ'],['projects','▦','Projects'],
+  ['inv','▣','Inventory'],['pos','₱','POS'],['bi','◔','BI'],['cyra','⬡','CYRA AI'],
+  ['notif','✉','Notify'],['integ','⇄','Integrations'],['lic','⚿','Licenses'],['users','☰','Users'],['set','⚙','Settings']
+];
+function buildNav(){
+  const allowed = ROLES[SESSION.role] || [];
+  const html = NAV.map(([id,ic,lb])=>{
+    if(!allowed.includes(id)) return '';
+    const locked = !hasFeat(id) && id!=='lic';
+    return `<button class="navBtn ${locked?'lock':''}" data-nav="${id}" onclick="go('${id}')"><span class="ic">${ic}</span><span>${lb}</span></button>`;
+  }).join('');
+  el('sidenav').innerHTML = html; el('bottomnavRow').innerHTML = html;
+}
+function go(id){
+  if(!hasFeat(id) && id!=='lic'){ renderLock(id); }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('act'));
+  el('pg-'+id).classList.add('act');
+  document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('act', b.dataset.nav===id));
+  el('main').scrollTop = 0;
+  ({dash:renderDash, design:dsCalc, circuit:ccRender, projects:prRender, inv:invRender, pos:posRenderAll, bi:biRender, cyra:cyraRender, notif:ntRender, integ:integRender, lic:licRender, users:usRender, set:setRender}[id]||(()=>{}))();
+}
+function renderLock(id){
+  el('pg-'+id).innerHTML = `<div class="featLock"><div class="big">⚿</div><h3 style="color:#fff;margin-bottom:6px">This module is in a higher package</h3><div>Your <b>${DB.license.tier}</b> license does not include <b>${id.toUpperCase()}</b>.<br>Upgrade in the License Manager to unlock it.</div><button class="btn y" style="margin-top:16px" onclick="go('lic')">Open License Manager</button></div>`;
+}
+
+/* ---------------- auth ---------------- */
+async function ensureAdmin(){
+  if(DB.users.length) return;
+  const c = await pbkdf2('nexsolar');
+  DB.users.push({id:uid('U'), name:'Administrator', user:'admin', role:'Admin', salt:c.salt, hash:c.hash});
+  save();
+}
+async function doLogin(){
+  const u = el('loginUser').value.trim(), p = el('loginPass').value;
+  const rec = DB.users.find(x=>x.user===u);
+  const err = el('loginErr');
+  if(!rec){ err.style.display='block'; err.textContent='No such user on this device.'; return; }
+  const c = await pbkdf2(p, rec.salt);
+  if(c.hash !== rec.hash){ err.style.display='block'; err.textContent='Wrong password.'; return; }
+  SESSION = {user:rec.user, name:rec.name, role:rec.role};
+  sessionStorage.setItem('NEXSOLAR_SES', JSON.stringify(SESSION));
+  enterApp();
+}
+function logout(){ sessionStorage.removeItem('NEXSOLAR_SES'); location.reload(); }
+function enterApp(){
+  el('loginScreen').style.display='none'; el('app').style.display='flex';
+  el('licChip').textContent = DB.license.tier + (DB.license.expiry? ' · '+DB.license.expiry : '');
+  buildNav(); netUpdate(); seedIfEmpty(); go('dash'); cyraRun(false);
+}
+function netUpdate(){ const on = navigator.onLine; el('netChip').textContent = on?'ONLINE':'OFFLINE'; el('netChip').className = 'chip ' + (on?'on':'off'); }
+addEventListener('online', ()=>{ netUpdate(); syncNow(true); });
+addEventListener('offline', netUpdate);
+
+/* ---------------- seed demo data ---------------- */
+function seedIfEmpty(){
+  if(DB.inventory.length) return;
+  const inv = [
+    ['PNL-580','Canadian Solar 580W Mono PERC','Panels',42,9800],['PNL-460','JA Solar 460W Half-cell','Panels',18,7600],
+    ['INV-5K','Deye 5kW Hybrid Inverter 48V','Inverters',6,68500],['INV-8K','Deye 8kW Hybrid Inverter','Inverters',3,98500],
+    ['BAT-51','LiFePO4 51.2V 100Ah (5.12kWh)','Batteries',10,62000],['MNT-RAIL','Alu Rail 4.2m','Mounting',120,950],
+    ['MNT-CLMP','Mid/End Clamp set','Mounting',300,85],['CBL-PV6','PV Cable 6mm² (per m)','Cables',800,65],
+    ['MC4-PR','MC4 Connector pair','Cables',150,120],['BRK-DC','DC Breaker 2P 500V 32A','Protection',40,850],
+    ['SPD-DC','DC SPD Type II','Protection',25,1650],['ENR-MTR','Bi-directional Net Meter','Metering',4,12500]
+  ];
+  DB.inventory = inv.map(([sku,name,cat,qty,price])=>({id:uid('I'),sku,name,cat,qty,price,rfid:'',min:cat==='Panels'?10:5}));
+  const stages = ['Lead','Survey','Design','Proposal','Contract','Installation','Commissioning','Handover'];
+  DB.projects = [
+    {id:uid('P'),name:'Residential 6kWp — Tibanga',client:'M. Santos',phone:'639171234501',kwp:6,value:290000,stage:'Installation',type:'hybrid',created:nowISO(),notes:''},
+    {id:uid('P'),name:'Poultry farm 12kWp — Buru-un',client:'R. Dimaporo',phone:'639051234502',kwp:12,value:540000,stage:'Proposal',type:'grid',created:nowISO(),notes:''},
+    {id:uid('P'),name:'Rice mill 30kWp — Linamon',client:'Linamon Agrivest',phone:'639221234503',kwp:30,value:1350000,stage:'Survey',type:'grid',created:nowISO(),notes:''},
+    {id:uid('P'),name:'Off-grid cabin 3kWp — Rogongon',client:'J. Uy',phone:'639981234504',kwp:3,value:210000,stage:'Lead',type:'off',created:nowISO(),notes:''}
+  ];
+  // 12 weeks of sales history for BI/CYRA
+  const now = Date.now();
+  for(let w=12; w>=1; w--){
+    const n = 2 + Math.floor(Math.random()*3);
+    for(let i=0;i<n;i++){
+      const amt = 8000 + Math.random()*90000;
+      DB.sales.push({id:uid('S'), or:'OR'+(1000+DB.sales.length), t:new Date(now - w*7*864e5 + i*864e5).toISOString(), items:[{name:'Historical sale',qty:1,price:amt}], sub:amt, disc:0, total:amt, pay:'Cash'});
+    }
+  }
+  save();
+}
+
+/* =========================== DASHBOARD =========================== */
+function renderDash(){
+  el('dashHello').textContent = 'Magandang araw, ' + SESSION.name.split(' ')[0];
+  const invVal = DB.inventory.reduce((s,i)=>s+i.qty*i.price,0);
+  const low = DB.inventory.filter(i=>i.qty<=i.min).length;
+  const rev30 = DB.sales.filter(s=>Date.now()-new Date(s.t)<30*864e5).reduce((s,x)=>s+x.total,0);
+  const pipeVal = DB.projects.filter(p=>!['Handover'].includes(p.stage)).reduce((s,p)=>s+(p.value||0),0);
+  const kwp = DB.projects.filter(p=>['Installation','Commissioning','Handover'].includes(p.stage)).reduce((s,p)=>s+(p.kwp||0),0);
+  el('dashKpis').innerHTML = [
+    ['y', peso(rev30), 'Revenue · 30 days'],
+    ['c', peso(pipeVal), 'Open pipeline value'],
+    ['g', kwp.toFixed(1)+' kWp', 'Capacity installed / in-build'],
+    [low? 'r':'', low? low+' items' : 'OK', 'Low-stock alerts · inv ' + peso(invVal).replace('₱','₱')]
+  ].map(([c,v,l])=>`<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join('');
+  drawRevChart('dashRevChart');
+  el('dashCyraFeed').innerHTML = DB.cyraLog.slice(-8).reverse().map(f=>`<div class="feedItem"><span class="when">${f.t.slice(11,16)}</span><span><span class="tag ${f.sev}">${f.sev.toUpperCase()}</span> ${esc(f.msg)}</span></div>`).join('') || '<div style="color:var(--mute);font-size:12px">CYRA has no findings yet. Run analysis from the CYRA AI tab.</div>';
+  const stages = ['Lead','Survey','Design','Proposal','Contract','Installation','Commissioning','Handover'];
+  el('dashPipe').innerHTML = stages.map(st=>{
+    const n = DB.projects.filter(p=>p.stage===st).length;
+    return `<span class="tag ${n?'cyan':'dim'}" style="margin:2px">${st} · ${n}</span>`;
+  }).join('');
+}
+
+/* =========================== DESIGN STUDIO =========================== */
+let DS = { loads:[], roof:{} };
+function dsAddLoad(){
+  const a = el('dsApp').value.trim(), w=+el('dsW').value, q=+el('dsQty').value||1, h=+el('dsHrs').value;
+  if(!a||!w||!h){ toast('Fill appliance, watts and hours','warn'); return; }
+  DS.loads.push({a,w,q,h}); el('dsApp').value=''; el('dsW').value=''; el('dsHrs').value='';
+  dsCalc();
+}
+function dsDelLoad(i){ DS.loads.splice(i,1); dsCalc(); }
+function dsCalc(){
+  // load table
+  const tb = el('dsLoadTable').querySelector('tbody');
+  tb.innerHTML = DS.loads.map((L,i)=>`<tr><td>${esc(L.a)}</td><td class="mono">${L.w}</td><td class="mono">${L.q}</td><td class="mono">${L.h}</td><td class="mono">${(L.w*L.q*L.h/1000).toFixed(2)}</td><td><button class="btn sm ghost" onclick="dsDelLoad(${i})">✕</button></td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--mute)">Add appliances to build the load profile — e.g. Aircon 1HP · 900W · 8hrs.</td></tr>';
+  const daily = DS.loads.reduce((s,L)=>s+L.w*L.q*L.h/1000,0);
+  const peak  = DS.loads.reduce((s,L)=>s+L.w*L.q,0);
+  el('dsDaily').textContent = daily.toFixed(2)+' kWh'; el('dsPeak').textContent = peak.toLocaleString()+' W';
+  // sizing
+  const psh=+el('dsPSH').value||4.8, eff=+el('dsEff').value||0.8, type=el('dsType').value;
+  const pW=+el('dsPanelW').value||580, voc=+el('dsVoc').value||51.5, maxV=+el('dsMaxV').value||600;
+  const arrKw = daily>0 ? daily/(psh*eff) : 0;
+  const nPanels = Math.ceil(arrKw*1000/pW);
+  const invKw = Math.max(arrKw, peak/1000*1.25);
+  const invPick = Math.ceil(invKw); // round to next kW
+  let battUnits=0, bankKwh=0;
+  if(type!=='grid'){
+    const dod=+el('dsDoD').value||0.9, aut=+el('dsAut').value||1, bu=+el('dsBattKwh').value||5.12;
+    bankKwh = daily*aut/(dod*0.95);
+    battUnits = Math.ceil(bankKwh/bu);
+  }
+  const perString = Math.max(1, Math.floor(maxV/(voc*1.25)));
+  const nStrings = nPanels? Math.ceil(nPanels/perString) : 0;
+  el('dsResults').innerHTML = [
+    [arrKw.toFixed(2)+' kWp','Required PV array','y'],
+    [nPanels+' pcs','Panels @ '+pW+'Wp','c'],
+    [invPick+' kW','Inverter (min, 1.25× peak)',''],
+    [type==='grid' ? '—' : battUnits+' units','Battery bank'+(bankKwh?` · ${bankKwh.toFixed(1)} kWh`:''),''],
+    [nStrings+' × '+Math.min(perString,nPanels||perString),'Strings × panels/string',''],
+    [(nPanels*pW/1000*psh*eff).toFixed(1)+' kWh','Est. daily production','g']
+  ].map(([v,l,c])=>`<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join('');
+  el('dsStringNote').textContent = `String check: ${Math.min(perString,nPanels||perString)} × ${voc}V × 1.25 cold factor = ${(Math.min(perString,nPanels||perString)*voc*1.25).toFixed(0)}V ≤ ${maxV}V inverter max — ` + (Math.min(perString,nPanels||perString)*voc*1.25<=maxV ? 'PASS ✔' : 'REVIEW ✖');
+  // sun strip
+  const hrs=[]; for(let h=5;h<=19;h++){ const x=(h-12)/4.2; hrs.push(Math.max(0,Math.exp(-x*x))); }
+  el('dsSunStrip').innerHTML = hrs.map(v=>`<i style="height:${Math.max(4,v*100)}%"></i>`).join('');
+  // financials
+  const rate=+el('dsRate').value||11.5, cpw=+el('dsCostW').value||45;
+  const sysCost = nPanels*pW*cpw + battUnits*(+el('dsBattKwh').value||5.12)*12500;
+  const dayProd = nPanels*pW/1000*psh*eff;
+  const moSave = dayProd*rate*30;
+  const payback = moSave>0 ? sysCost/(moSave*12) : 0;
+  el('dsFin').innerHTML = [
+    [peso(sysCost),'Estimated system cost','y'],[peso(moSave),'Monthly savings','g'],
+    [payback? payback.toFixed(1)+' yrs':'—','Simple payback','c'],[(dayProd*365/1000).toFixed(1)+' MWh','Annual yield','']
+  ].map(([v,l,c])=>`<div class="kpi"><div class="v ${c}" style="font-size:17px">${v}</div><div class="l">${l}</div></div>`).join('');
+  DS.calc = {daily,peak,arrKw,nPanels,invPick,battUnits,bankKwh,sysCost,moSave,payback,dayProd,type,psh};
+  dsRoofBuild(true);
+}
+function dsRoofBuild(keep){
+  const cols=+el('dsRoofCols').value||8, rows=+el('dsRoofRows').value||5;
+  const g = el('dsRoof'); g.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  if(!keep) DS.roof = {};
+  let html='';
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const k=r+'_'+c; html += `<div class="roofCell ${DS.roof[k]?'on':''}" onclick="dsRoofTap('${k}')"></div>`; }
+  g.innerHTML = html;
+  el('dsRoofCount').textContent = Object.keys(DS.roof).filter(k=>DS.roof[k]).length + ' panels placed';
+}
+function dsRoofTap(k){ DS.roof[k]=!DS.roof[k]; dsRoofBuild(true); }
+function dsRoofAuto(){ const cols=+el('dsRoofCols').value||8, rows=+el('dsRoofRows').value||5; let n=DS.calc?.nPanels||0; DS.roof={}; outer: for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ if(n--<=0) break outer; DS.roof[r+'_'+c]=true; } dsRoofBuild(true); }
+function dsRoofClear(){ DS.roof={}; dsRoofBuild(true); }
+function dsSave(){
+  if(!el('dsClient').value.trim()){ toast('Enter client name first','warn'); return; }
+  const d = {id:uid('D'), t:nowISO(), client:el('dsClient').value, loc:el('dsLoc').value, loads:DS.loads, roof:DS.roof, calc:DS.calc,
+    inputs:Object.fromEntries(['dsType','dsPSH','dsRate','dsEff','dsPanelW','dsVoc','dsMaxV','dsBattKwh','dsDoD','dsAut','dsCostW'].map(k=>[k,el(k).value]))};
+  DB.designs.push(d); queue('designs','saved',{id:d.id,client:d.client,kwp:DS.calc?.arrKw}); save();
+  toast('Design saved — '+d.client);
+}
+function dsLoadSaved(){
+  if(!DB.designs.length){ toast('No saved designs yet','warn'); return; }
+  modal(`<h3>Saved designs</h3>` + DB.designs.slice().reverse().map(d=>`<div class="kcard" onclick="dsOpen('${d.id}')"><div class="nm">${esc(d.client)}</div><div class="mt">${d.t.slice(0,10)} · ${d.calc? d.calc.arrKw.toFixed(1)+' kWp':''} · ${esc(d.loc||'')}</div></div>`).join('') + `<div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Close</button></div>`);
+}
+function dsOpen(id){
+  const d = DB.designs.find(x=>x.id===id); if(!d) return;
+  el('dsClient').value=d.client; el('dsLoc').value=d.loc||''; DS.loads=d.loads||[]; DS.roof=d.roof||{};
+  for(const k in d.inputs) el(k) && (el(k).value = d.inputs[k]);
+  modalClose(); dsCalc(); toast('Design loaded');
+}
+function dsToProject(){
+  if(!DS.calc || !el('dsClient').value.trim()){ toast('Complete the design first','warn'); return; }
+  DB.projects.push({id:uid('P'), name:`${el('dsClient').value} — ${DS.calc.arrKw.toFixed(1)}kWp`, client:el('dsClient').value, phone:'', kwp:+DS.calc.arrKw.toFixed(1), value:Math.round(DS.calc.sysCost), stage:'Design', type:DS.calc.type, created:nowISO(), notes:'From Design Studio'});
+  queue('projects','upsert',DB.projects.at(-1)); save(); toast('Project created'); go('projects');
+}
+function dsProposal(){
+  if(!DS.calc){ toast('Complete the design first','warn'); return; }
+  const c = DS.calc, s = DB.settings;
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>NEXSOLAR Proposal</title><style>
+    body{font-family:Inter,Arial,sans-serif;color:#111;max-width:760px;margin:24px auto;padding:0 20px}
+    h1{font-family:'Chakra Petch',sans-serif;color:#0A1F44}h1 b{color:#C79100}
+    .bar{height:5px;background:linear-gradient(90deg,#FFD60A,#00B8D9);border-radius:3px;margin:8px 0 18px}
+    table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #ccd;padding:8px;text-align:left;font-size:13px}
+    th{background:#0A1F44;color:#fff;font-family:'Chakra Petch',sans-serif}
+    .ft{margin-top:30px;font-size:11px;color:#556}
+  </style></head><body>
+  <h1>NEX<b>SOLAR</b> — Solar PV System Proposal</h1><div class="bar"></div>
+  <p><b>Client:</b> ${esc(el('dsClient').value||'—')} &nbsp; <b>Site:</b> ${esc(el('dsLoc').value)} &nbsp; <b>Date:</b> ${new Date().toLocaleDateString('en-PH')}</p>
+  <table><tr><th colspan="2">System summary</th></tr>
+  <tr><td>System type</td><td>${{grid:'Grid-tie (net metering, RA 9513)',hybrid:'Hybrid (grid + battery backup)',off:'Off-grid'}[c.type]}</td></tr>
+  <tr><td>Daily load</td><td>${c.daily.toFixed(2)} kWh · peak ${c.peak.toLocaleString()} W</td></tr>
+  <tr><td>PV array</td><td>${c.arrKw.toFixed(2)} kWp — ${c.nPanels} × ${el('dsPanelW').value}Wp panels</td></tr>
+  <tr><td>Inverter</td><td>${c.invPick} kW ${c.type==='grid'?'grid-tie':'hybrid'} minimum</td></tr>
+  ${c.type!=='grid'?`<tr><td>Battery bank</td><td>${c.battUnits} units · ${c.bankKwh.toFixed(1)} kWh usable design</td></tr>`:''}
+  <tr><td>Est. daily production</td><td>${c.dayProd.toFixed(1)} kWh @ ${c.psh} PSH</td></tr>
+  <tr><td><b>Investment</b></td><td><b>${peso(c.sysCost)}</b></td></tr>
+  <tr><td>Monthly savings</td><td>${peso(c.moSave)} · simple payback ${c.payback.toFixed(1)} years</td></tr></table>
+  <table><tr><th>Appliance</th><th>W</th><th>Qty</th><th>Hrs/day</th><th>kWh/day</th></tr>
+  ${DS.loads.map(L=>`<tr><td>${esc(L.a)}</td><td>${L.w}</td><td>${L.q}</td><td>${L.h}</td><td>${(L.w*L.q*L.h/1000).toFixed(2)}</td></tr>`).join('')}</table>
+  <p style="font-size:12px">Scope: supply & installation, mounting structure, DC/AC protection, SPD, grounding, testing & commissioning, net-metering assistance (grid-tie). Standard workmanship warranty 2 years; panels per manufacturer warranty.</p>
+  <div class="ft">${esc(s.company)} · ${esc(s.contact)}<br>Precision · Scale · Control</div>
+  <script>print()<\/script></body></html>`);
+  w.document.close();
+}
+
+/* =========================== PROJECTS =========================== */
+const STAGES = ['Lead','Survey','Design','Proposal','Contract','Installation','Commissioning','Handover'];
+function prRender(){
+  el('prKanban').innerHTML = STAGES.map(st=>{
+    const cards = DB.projects.filter(p=>p.stage===st);
+    return `<div class="kcol"><h4>${st}<span>${cards.length}</span></h4>` + cards.map(p=>
+      `<div class="kcard" onclick="prOpen('${p.id}')"><div class="nm">${esc(p.name)}</div><div class="mt">${p.kwp||'?'} kWp · ${peso(p.value)}</div><div class="mt">${esc(p.client||'')}</div></div>`).join('') + `</div>`;
+  }).join('');
+}
+function prNew(){ prForm({id:'',name:'',client:'',phone:'',kwp:'',value:'',stage:'Lead',type:'grid',notes:''}); }
+function prOpen(id){ const p = DB.projects.find(x=>x.id===id); if(p) prForm(p); }
+function prForm(p){
+  modal(`<h3>${p.id?'Edit project':'New project'}</h3>
+  <label>Project name</label><input id="pfName" value="${esc(p.name)}">
+  <div class="grid2"><div><label>Client</label><input id="pfClient" value="${esc(p.client)}"></div>
+  <div><label>Phone (63…)</label><input id="pfPhone" value="${esc(p.phone||'')}"></div>
+  <div><label>kWp</label><input id="pfKwp" type="number" step="0.1" value="${p.kwp}"></div>
+  <div><label>Value ₱</label><input id="pfVal" type="number" value="${p.value}"></div>
+  <div><label>Stage</label><select id="pfStage">${STAGES.map(s=>`<option ${s===p.stage?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div><label>Type</label><select id="pfType"><option value="grid" ${p.type==='grid'?'selected':''}>Grid-tie</option><option value="hybrid" ${p.type==='hybrid'?'selected':''}>Hybrid</option><option value="off" ${p.type==='off'?'selected':''}>Off-grid</option></select></div></div>
+  <label>Notes</label><textarea id="pfNotes" rows="3">${esc(p.notes||'')}</textarea>
+  <div class="modalBtns">${p.id?`<button class="btn danger sm" onclick="prDel('${p.id}')">Delete</button>`:''}
+  ${p.id&&p.phone?`<button class="btn ghost sm" onclick="prNotify('${p.id}')">Notify client</button>`:''}
+  <button class="btn ghost sm" onclick="modalClose()">Cancel</button>
+  <button class="btn sm" onclick="prSave('${p.id}')">Save</button></div>`);
+}
+function prSave(id){
+  const rec = { name:el('pfName').value, client:el('pfClient').value, phone:el('pfPhone').value.replace(/\D/g,''), kwp:+el('pfKwp').value||0, value:+el('pfVal').value||0, stage:el('pfStage').value, type:el('pfType').value, notes:el('pfNotes').value };
+  if(!rec.name){ toast('Name is required','warn'); return; }
+  if(id){ const p = DB.projects.find(x=>x.id===id); const stageChanged = p.stage!==rec.stage; Object.assign(p,rec); if(stageChanged) queue('projects','stage_changed',p); else queue('projects','upsert',p); }
+  else { const p = {id:uid('P'), created:nowISO(), ...rec}; DB.projects.push(p); queue('projects','upsert',p); }
+  save(); modalClose(); prRender(); toast('Project saved');
+}
+function prDel(id){ DB.projects = DB.projects.filter(x=>x.id!==id); queue('projects','delete',{id}); save(); modalClose(); prRender(); }
+function prNotify(id){ const p = DB.projects.find(x=>x.id===id); modalClose(); go('notif'); el('ntName').value=p.client; el('ntPhone').value=p.phone; el('ntTpl').value='stage'; ntApplyTpl(p); }
+
+/* =========================== INVENTORY =========================== */
+function invRender(){
+  const cats = [...new Set(DB.inventory.map(i=>i.cat))];
+  el('invCat').innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option ${el('invCat').value===c?'selected':''}>${c}</option>`).join('');
+  const q = (el('invSearch').value||'').toLowerCase(), fc = el('invCat').value;
+  const rows = DB.inventory.filter(i=>(!fc||i.cat===fc)&&(!q||`${i.sku} ${i.name} ${i.rfid}`.toLowerCase().includes(q)));
+  el('invTable').querySelector('tbody').innerHTML = rows.map(i=>{
+    const lowc = i.qty<=i.min ? 'bad' : i.qty<=i.min*2 ? 'warn':'ok';
+    return `<tr><td class="mono">${esc(i.sku)}</td><td>${esc(i.name)}</td><td><span class="tag dim">${esc(i.cat)}</span></td>
+    <td><span class="tag ${lowc}">${i.qty}</span></td><td class="mono">${Number(i.price).toLocaleString()}</td>
+    <td class="mono" style="font-size:11px">${esc(i.rfid||'—')}</td>
+    <td style="white-space:nowrap"><button class="btn sm ghost" onclick="invMove('${i.id}',1)">＋</button> <button class="btn sm ghost" onclick="invMove('${i.id}',-1)">－</button> <button class="btn sm ghost" onclick="invEdit('${i.id}')">✎</button></td></tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:var(--mute)">No items match. Add stock with + Item or scan a barcode.</td></tr>';
+  const val = DB.inventory.reduce((s,i)=>s+i.qty*i.price,0);
+  const low = DB.inventory.filter(i=>i.qty<=i.min);
+  el('invKpis').innerHTML = [
+    ['c', DB.inventory.length, 'Line items'],['y', peso(val), 'Stock value'],
+    [low.length?'r':'g', low.length, 'Low-stock items'],['', DB.moves.length, 'Movements logged']
+  ].map(([c,v,l])=>`<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join('');
+}
+function invMove(id, d){
+  const i = DB.inventory.find(x=>x.id===id); if(!i) return;
+  const n = prompt((d>0?'Stock IN':'Stock OUT')+' — quantity for '+i.name, '1'); if(n===null) return;
+  const qty = Math.abs(parseInt(n)||0); if(!qty) return;
+  i.qty = Math.max(0, i.qty + d*qty);
+  DB.moves.push({id:uid('M'), t:nowISO(), sku:i.sku, d:d*qty, by:SESSION.user});
+  queue('inventory','upsert',i);
+  if(i.qty<=i.min){ cyraLogAdd('warn', `Low stock: ${i.name} at ${i.qty} (min ${i.min})`); fireWebhooks('stock.low', {sku:i.sku, qty:i.qty}); }
+  save(); invRender();
+}
+function invNew(){ invForm({id:'',sku:'',name:'',cat:'Panels',qty:0,price:0,min:5,rfid:''}); }
+function invEdit(id){ const i = DB.inventory.find(x=>x.id===id); if(i) invForm(i); }
+function invForm(i){
+  modal(`<h3>${i.id?'Edit item':'New item'}</h3>
+  <div class="grid2"><div><label>SKU / barcode</label><input id="ifSku" class="mono" value="${esc(i.sku)}"></div>
+  <div><label>Category</label><input id="ifCat" value="${esc(i.cat)}" list="catList"><datalist id="catList">${[...new Set(DB.inventory.map(x=>x.cat))].map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div></div>
+  <label>Item name</label><input id="ifName" value="${esc(i.name)}">
+  <div class="grid3"><div><label>Qty</label><input id="ifQty" type="number" value="${i.qty}"></div>
+  <div><label>Unit ₱</label><input id="ifPrice" type="number" step="0.01" value="${i.price}"></div>
+  <div><label>Min level</label><input id="ifMin" type="number" value="${i.min}"></div></div>
+  <label>RFID tag / serial</label>
+  <div class="toolRow"><input id="ifRfid" class="mono" value="${esc(i.rfid||'')}"><button class="btn sm ghost" onclick="nfcRead('ifRfid')">◉ NFC</button></div>
+  <div class="modalBtns">${i.id?`<button class="btn danger sm" onclick="invDel('${i.id}')">Delete</button>`:''}
+  <button class="btn ghost sm" onclick="modalClose()">Cancel</button><button class="btn sm" onclick="invSave('${i.id}')">Save</button></div>`);
+}
+function invSave(id){
+  const rec = {sku:el('ifSku').value.trim(), cat:el('ifCat').value.trim()||'Misc', name:el('ifName').value.trim(), qty:+el('ifQty').value||0, price:+el('ifPrice').value||0, min:+el('ifMin').value||0, rfid:el('ifRfid').value.trim()};
+  if(!rec.sku||!rec.name){ toast('SKU and name required','warn'); return; }
+  if(id){ Object.assign(DB.inventory.find(x=>x.id===id), rec); } else DB.inventory.push({id:uid('I'), ...rec});
+  queue('inventory','upsert', id? DB.inventory.find(x=>x.id===id) : DB.inventory.at(-1));
+  save(); modalClose(); invRender(); toast('Item saved');
+}
+function invDel(id){ DB.inventory = DB.inventory.filter(x=>x.id!==id); queue('inventory','delete',{id}); save(); modalClose(); invRender(); }
+
+/* =========================== SCANNER (barcode camera + wedge + RFID) =========================== */
+let scanStream=null, scanTimer=null, scanTarget='inv';
+function scanOpen(target){
+  scanTarget = target;
+  modal(`<h3>▣ Scanner</h3>
+  <div id="scanVideoWrap"><video id="scanVideo" autoplay playsinline muted></video><div id="scanLine"></div></div>
+  <div id="scanMsg" style="font-size:12px;color:var(--dim);margin-top:8px">Starting camera…</div>
+  <label>Or keyboard-wedge / manual entry</label>
+  <div class="toolRow"><input id="scanWedge" class="mono" placeholder="Scan into this field or type SKU/RFID" onkeydown="if(event.key==='Enter'){scanHit(this.value);this.value=''}"><button class="btn sm ghost" onclick="nfcRead(null)">◉ NFC / RFID</button></div>
+  <div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Close</button></div>`);
+  startScan();
+  setTimeout(()=>el('scanWedge')&&el('scanWedge').focus(), 250);
+}
+async function startScan(){
+  const msg = el('scanMsg');
+  try{
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    el('scanVideo').srcObject = scanStream;
+    if('BarcodeDetector' in window){
+      const det = new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','code_39','upc_a','upc_e','itf','data_matrix']});
+      msg.textContent = 'Camera live — point at a barcode or QR.';
+      scanTimer = setInterval(async ()=>{
+        try{ const codes = await det.detect(el('scanVideo')); if(codes.length){ scanHit(codes[0].rawValue); } }catch(e){}
+      }, 350);
+    } else msg.textContent = 'Camera live. This browser lacks BarcodeDetector — use the wedge field below (any handheld scanner types into it).';
+  }catch(e){ msg.textContent = 'Camera unavailable ('+e.name+'). Use the keyboard-wedge field — handheld scanners work there.'; }
+}
+function stopScan(){ if(scanTimer){clearInterval(scanTimer);scanTimer=null;} if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;} }
+let lastHit = {v:'',t:0};
+function scanHit(val){
+  val = String(val).trim(); if(!val) return;
+  if(val===lastHit.v && Date.now()-lastHit.t<1500) return; lastHit={v:val,t:Date.now()};
+  const item = DB.inventory.find(i=>i.sku===val || i.rfid===val);
+  if(navigator.vibrate) navigator.vibrate(40);
+  if(!item){ el('scanMsg').textContent = `"${val}" not found — create it?`; toast('Unknown code: '+val,'warn'); return; }
+  if(scanTarget==='pos'){ posAdd(item.id); el('scanMsg').textContent = 'Added to cart: '+item.name; }
+  else { el('scanMsg').textContent = item.name+' — stock '+item.qty; modalClose(); invEdit(item.id); }
+}
+async function nfcRead(fieldId){
+  if(!('NDEFReader' in window)){ toast('Web NFC needs Chrome on Android','warn'); return; }
+  try{
+    const r = new NDEFReader(); await r.scan(); toast('Tap the RFID/NFC tag…');
+    r.onreading = ev => { const ser = ev.serialNumber || ''; if(fieldId) el(fieldId).value = ser; else scanHit(ser); toast('Tag read: '+ser); };
+  }catch(e){ toast('NFC: '+e.message,'err'); }
+}
+
+/* =========================== POS =========================== */
+let CART = [];
+function posRenderAll(){ posRenderCatalog(); posRenderCart(); posRenderSales(); }
+function posRenderCatalog(){
+  const q = (el('posSearch').value||'').toLowerCase();
+  el('posCatalog').innerHTML = DB.inventory.filter(i=>!q||`${i.sku} ${i.name}`.toLowerCase().includes(q)).map(i=>
+    `<div class="kcard" onclick="posAdd('${i.id}')"><div class="nm" style="font-size:12px">${esc(i.name)}</div><div class="mt">${peso(i.price)} · stock ${i.qty}</div></div>`).join('');
+}
+function posAdd(id){
+  const i = DB.inventory.find(x=>x.id===id); if(!i) return;
+  const line = CART.find(c=>c.id===id);
+  if(line) line.qty++; else CART.push({id, name:i.name, price:i.price, qty:1});
+  posRenderCart();
+}
+function posQty(id, d){ const l = CART.find(c=>c.id===id); if(!l) return; l.qty+=d; if(l.qty<=0) CART=CART.filter(c=>c.id!==id); posRenderCart(); }
+function posRenderCart(){
+  el('posCart').innerHTML = CART.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(28,58,110,.5)">
+    <div style="flex:1;font-size:13px">${esc(c.name)}<div class="mono" style="font-size:11px;color:var(--dim)">${peso(c.price)}</div></div>
+    <button class="btn sm ghost" onclick="posQty('${c.id}',-1)">－</button><span class="mono">${c.qty}</span><button class="btn sm ghost" onclick="posQty('${c.id}',1)">＋</button></div>`).join('') || '<div style="color:var(--mute);font-size:12px">Cart is empty — tap items in the catalog or scan.</div>';
+  const sub = CART.reduce((s,c)=>s+c.price*c.qty,0);
+  let disc=0, vat=0, total=sub;
+  if(el('posSC').checked){ const net = sub/1.12; disc = net*0.20; total = net - disc; }
+  else { vat = sub - sub/1.12; total = sub; }
+  el('posTotals').innerHTML = `Subtotal <b style="float:right" class="mono">${peso(sub)}</b><br>` +
+    (el('posSC').checked? `SC/PWD −20% (VAT-exempt) <b style="float:right" class="mono" >−${peso(disc)}</b><br>` : `VAT 12% included <b style="float:right" class="mono">${peso(vat)}</b><br>`) +
+    `<span style="font-family:var(--font-d);font-size:16px;color:var(--yellow)">TOTAL <b style="float:right" class="mono">${peso(total)}</b></span>`;
+  el('posTotals').dataset.total = total; el('posTotals').dataset.sub = sub; el('posTotals').dataset.disc = disc;
+}
+function posCheckout(){
+  if(!CART.length){ toast('Cart is empty','warn'); return; }
+  for(const c of CART){ const i = DB.inventory.find(x=>x.id===c.id); if(i){ i.qty = Math.max(0, i.qty - c.qty); queue('inventory','upsert',i); if(i.qty<=i.min) fireWebhooks('stock.low',{sku:i.sku,qty:i.qty}); } }
+  const sale = {id:uid('S'), or:'OR'+(1000+DB.sales.length), t:nowISO(), items:CART.map(c=>({name:c.name,qty:c.qty,price:c.price})), sub:+el('posTotals').dataset.sub, disc:+el('posTotals').dataset.disc, total:+el('posTotals').dataset.total, pay:el('posPay').value, by:SESSION.user};
+  DB.sales.push(sale); queue('sales','completed',sale); save();
+  CART=[]; el('posSC').checked=false; posRenderAll(); toast('Sale complete — '+sale.or+' · '+peso(sale.total));
+}
+function posRenderSales(){
+  el('posSales').querySelector('tbody').innerHTML = DB.sales.slice(-15).reverse().map(s=>
+    `<tr><td class="mono">${s.or}</td><td class="mono" style="font-size:11px">${s.t.slice(0,16).replace('T',' ')}</td><td>${s.items.reduce((a,i)=>a+i.qty,0)}</td><td class="mono">${Number(s.total).toLocaleString(undefined,{minimumFractionDigits:2})}</td><td><span class="tag dim">${esc(s.pay)}</span></td><td><button class="btn sm ghost" onclick="posReceipt('${s.id}')">🖶</button></td></tr>`).join('');
+}
+function posReceipt(id){
+  const s = DB.sales.find(x=>x.id===id); if(!s) return;
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>${s.or}</title><style>body{font-family:'JetBrains Mono',monospace;font-size:12px;max-width:300px;margin:10px auto}hr{border:none;border-top:1px dashed #999}</style></head><body>
+  <center><b>${esc(DB.settings.company)}</b><br>NEXSOLAR POS<br>${esc(DB.settings.contact)}</center><hr>
+  ${s.or} · ${s.t.slice(0,16).replace('T',' ')}<hr>
+  ${s.items.map(i=>`${esc(i.name)}<br>&nbsp;&nbsp;${i.qty} × ${Number(i.price).toFixed(2)} = ${(i.qty*i.price).toFixed(2)}<br>`).join('')}<hr>
+  ${s.disc?`SC/PWD disc: -${s.disc.toFixed(2)}<br>`:''}<b>TOTAL: ₱${Number(s.total).toFixed(2)}</b><br>Paid via ${esc(s.pay)}<hr>
+  <center>Salamat! · Precision · Scale · Control</center>
+  <script>print()<\/script></body></html>`);
+  w.document.close();
+}
+
+/* =========================== CHARTS (canvas, no deps) =========================== */
+function chartCtx(id){
+  const c = el(id); if(!c) return null;
+  const r = c.getBoundingClientRect(); const dpr = devicePixelRatio||1;
+  c.width = Math.max(300,r.width)*dpr; c.height = 220*dpr;
+  const x = c.getContext('2d'); x.scale(dpr,dpr); x.clearRect(0,0,c.width,c.height);
+  return {x, W:Math.max(300,r.width), H:220};
+}
+function drawLine(id, series, labels, colors){
+  const g = chartCtx(id); if(!g) return; const {x,W,H} = g;
+  const pad = {l:44,r:10,t:14,b:24};
+  const all = series.flat().filter(v=>v!=null);
+  const max = Math.max(1,...all)*1.1, min = 0;
+  const px = i => pad.l + (W-pad.l-pad.r) * (i/Math.max(1,(labels.length-1)));
+  const py = v => H-pad.b - (H-pad.t-pad.b) * ((v-min)/(max-min));
+  x.strokeStyle='#1C3A6E'; x.fillStyle='#8FA6CC'; x.font='10px JetBrains Mono'; x.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y = pad.t + (H-pad.t-pad.b)*i/4; x.beginPath(); x.moveTo(pad.l,y); x.lineTo(W-pad.r,y); x.stroke(); x.fillText(short(max-(max-min)*i/4), 4, y+3); }
+  labels.forEach((lb,i)=>{ if(i%Math.ceil(labels.length/6)===0) x.fillText(lb, px(i)-10, H-8); });
+  series.forEach((s,si)=>{
+    x.strokeStyle = colors[si]; x.lineWidth=2; x.beginPath();
+    s.forEach((v,i)=>{ if(v==null) return; const X=px(i),Y=py(v); i===0||s[i-1]==null? x.moveTo(X,Y): x.lineTo(X,Y); });
+    x.stroke();
+    x.fillStyle = colors[si]; s.forEach((v,i)=>{ if(v==null) return; x.beginPath(); x.arc(px(i),py(v),2.4,0,7); x.fill(); });
+  });
+}
+function drawBars(id, vals, labels, color){
+  const g = chartCtx(id); if(!g) return; const {x,W,H} = g;
+  const pad={l:44,r:10,t:14,b:36}; const max=Math.max(1,...vals)*1.1;
+  const bw = (W-pad.l-pad.r)/vals.length;
+  x.fillStyle='#8FA6CC'; x.font='10px JetBrains Mono';
+  vals.forEach((v,i)=>{
+    const h=(H-pad.t-pad.b)*v/max, X=pad.l+i*bw+bw*0.15, Y=H-pad.b-h;
+    const grd=x.createLinearGradient(0,Y,0,H-pad.b); grd.addColorStop(0,color); grd.addColorStop(1,'#0E2650');
+    x.fillStyle=grd; x.fillRect(X,Y,bw*0.7,h);
+    x.fillStyle='#8FA6CC'; x.save(); x.translate(pad.l+i*bw+bw/2, H-6); x.rotate(-0.5); x.textAlign='right'; x.fillText(String(labels[i]).slice(0,10),0,0); x.restore();
+    x.fillStyle='#EAF2FF'; x.fillText(short(v), X, Y-4);
+  });
+}
+function short(n){ n=+n; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'k'; return n.toFixed(0); }
+function weeklyRevenue(nWeeks){
+  const out=[], lbs=[];
+  for(let w=nWeeks-1;w>=0;w--){
+    const a=Date.now()-(w+1)*7*864e5, b=Date.now()-w*7*864e5;
+    out.push(DB.sales.filter(s=>{const t=+new Date(s.t);return t>=a&&t<b}).reduce((s,x)=>s+x.total,0));
+    lbs.push('W-'+w);
+  }
+  return {vals:out, lbs};
+}
+function drawRevChart(id){ const {vals,lbs} = weeklyRevenue(12); drawLine(id,[vals],lbs,['#00C2D1']); }
+
+/* =========================== BI =========================== */
+function biRender(){
+  const rev30 = DB.sales.filter(s=>Date.now()-new Date(s.t)<30*864e5).reduce((s,x)=>s+x.total,0);
+  const avg = DB.sales.length? DB.sales.reduce((s,x)=>s+x.total,0)/DB.sales.length : 0;
+  const won = DB.projects.filter(p=>['Contract','Installation','Commissioning','Handover'].includes(p.stage)).length;
+  const conv = DB.projects.length? Math.round(100*won/DB.projects.length) : 0;
+  el('biKpis').innerHTML = [
+    ['y',peso(rev30),'Revenue · 30d'],['c',peso(avg),'Avg ticket'],['g',conv+'%','Lead → contract conversion'],['',DB.designs.length,'Designs produced']
+  ].map(([c,v,l])=>`<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join('');
+  // revenue + holt forecast
+  const {vals,lbs} = weeklyRevenue(12);
+  const fc = holt(vals, 4);
+  drawLine('biRev', [vals.concat([null,null,null,null]), Array(vals.length-1).fill(null).concat([vals.at(-1)],fc)], lbs.concat(['F1','F2','F3','F4']), ['#00C2D1','#FFD60A']);
+  // funnel
+  drawBars('biFunnel', STAGES.map(st=>DB.projects.filter(p=>p.stage===st).length), STAGES, '#00C2D1');
+  // inventory by category
+  const cats = [...new Set(DB.inventory.map(i=>i.cat))];
+  drawBars('biInv', cats.map(c=>DB.inventory.filter(i=>i.cat===c).reduce((s,i)=>s+i.qty*i.price,0)), cats, '#FFD60A');
+  // kwp by month (from projects in build+)
+  const mons={}, act = DB.projects.filter(p=>['Installation','Commissioning','Handover'].includes(p.stage));
+  act.forEach(p=>{ const m=(p.created||nowISO()).slice(0,7); mons[m]=(mons[m]||0)+(p.kwp||0); });
+  const mk = Object.keys(mons).sort();
+  drawBars('biKwp', mk.length? mk.map(m=>mons[m]) : [0], mk.length? mk : ['—'], '#2FD672');
+}
+function holt(data, n){
+  if(data.length<3) return Array(n).fill(data.at(-1)||0);
+  const a=0.5,b=0.3; let l=data[0], t=data[1]-data[0];
+  for(let i=1;i<data.length;i++){ const pl=l; l=a*data[i]+(1-a)*(l+t); t=b*(l-pl)+(1-b)*t; }
+  return Array.from({length:n},(_,i)=>Math.max(0,l+(i+1)*t));
+}
+
+/* =========================== CYRA AI / ML =========================== */
+function cyraLogAdd(sev,msg){ DB.cyraLog.push({t:nowISO(),sev,msg}); if(DB.cyraLog.length>200) DB.cyraLog.shift(); save(); }
+function cyraRun(interactive){
+  const findings = [];
+  // 1) z-score anomaly on weekly revenue
+  const {vals} = weeklyRevenue(12);
+  const mean = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const sd = Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length)||1;
+  const z = (vals.at(-1)-mean)/sd;
+  if(z<-1.5) findings.push(['warn',`Revenue anomaly: this week is ${Math.abs(z).toFixed(1)}σ below the 12-week mean. Check pipeline follow-ups.`]);
+  if(z>1.5) findings.push(['ok',`Revenue surge: ${z.toFixed(1)}σ above the mean this week — verify stock cover for panels & inverters.`]);
+  // 2) stock-out risk: consumption rate vs stock
+  DB.inventory.forEach(i=>{
+    const used = DB.moves.filter(m=>m.sku===i.sku && m.d<0 && Date.now()-new Date(m.t)<30*864e5).reduce((s,m)=>s-m.d,0);
+    const daily = used/30;
+    if(daily>0 && i.qty/daily < 14) findings.push(['warn',`${i.name}: ~${Math.floor(i.qty/daily)} days of stock left at current usage.`]);
+    if(i.qty<=i.min) findings.push(['bad',`${i.name} is at/below minimum (${i.qty} ≤ ${i.min}). Reorder now.`]);
+  });
+  // 3) stale projects
+  DB.projects.forEach(p=>{
+    const age = (Date.now()-new Date(p.created))/864e5;
+    if(['Lead','Survey','Proposal'].includes(p.stage) && age>21) findings.push(['warn',`"${p.name}" has sat in ${p.stage} for ${Math.floor(age)} days — send a follow-up.`]);
+  });
+  if(!findings.length) findings.push(['ok','All systems nominal. Revenue, stock cover and pipeline velocity within expected bands.']);
+  findings.slice(0,6).forEach(([s,m])=>cyraLogAdd(s,m));
+  if(interactive){ cyraRender(); toast('CYRA analysis complete — '+findings.length+' findings'); }
+}
+function cyraLeadScore(p){
+  // logistic model: value size, stage depth, type, recency
+  const stageIdx = STAGES.indexOf(p.stage)/(STAGES.length-1);
+  const v = Math.min(1,(p.value||0)/1e6);
+  const age = Math.min(1,(Date.now()-new Date(p.created))/(60*864e5));
+  const zz = -1.2 + 2.8*stageIdx + 1.6*v - 1.1*age + (p.type==='grid'?0.3:0);
+  return 1/(1+Math.exp(-zz));
+}
+function cyraRender(){
+  const open = DB.projects.filter(p=>p.stage!=='Handover');
+  const hot = open.filter(p=>cyraLeadScore(p)>0.6).length;
+  el('cyraKpis').innerHTML = [
+    ['c', DB.cyraLog.length, 'Findings logged'],['y', hot, 'Hot opportunities (>60%)'],
+    ['g', holt(weeklyRevenue(12).vals,1)[0].toLocaleString(undefined,{maximumFractionDigits:0}), 'Next-week revenue forecast ₱']
+  ].map(([c,v,l])=>`<div class="kpi"><div class="v ${c}">${v}</div><div class="l">${l}</div></div>`).join('');
+  el('cyraFindings').innerHTML = DB.cyraLog.slice(-25).reverse().map(f=>`<div class="feedItem"><span class="when">${f.t.slice(5,16).replace('T',' ')}</span><span><span class="tag ${f.sev}">${f.sev.toUpperCase()}</span> ${esc(f.msg)}</span></div>`).join('');
+  el('cyraLeads').querySelector('tbody').innerHTML = open.map(p=>{
+    const sc = cyraLeadScore(p);
+    return {p,sc};
+  }).sort((a,b)=>b.sc-a.sc).map(({p,sc})=>
+    `<tr><td>${esc(p.name)}</td><td><span class="tag dim">${p.stage}</span></td><td class="mono">${Number(p.value).toLocaleString()}</td>
+    <td style="min-width:110px"><div class="progress"><i style="width:${Math.round(sc*100)}%"></i></div><span class="mono" style="font-size:10px;color:var(--dim)">${Math.round(sc*100)}%</span></td></tr>`).join('');
+  // 30-day production forecast from installed kWp
+  const kwp = DB.projects.filter(p=>['Commissioning','Handover'].includes(p.stage)).reduce((s,p)=>s+(p.kwp||0),0) || 6;
+  const hist = Array.from({length:20},(_,i)=> kwp*4.8*0.8*(0.85+0.3*Math.sin(i/3)+((Math.random()-.5)*0.1)));
+  const fc = holt(hist,10);
+  drawLine('cyraFc', [hist.concat(Array(10).fill(null)), Array(19).fill(null).concat([hist.at(-1)],fc)], Array.from({length:30},(_,i)=>'D'+(i+1)), ['#00C2D1','#FFD60A']);
+}
+
+/* =========================== NOTIFICATIONS =========================== */
+const NT_TPLS = {
+  quote:  ['Quotation ready','Hi {name}, your NEXSOLAR quotation is ready. Total investment {value}. Reply here or call {contact} to proceed. — {company}'],
+  stage:  ['Project update','Hi {name}, update on your solar project: it has moved to the {stage} stage. We will coordinate the next steps shortly. — {company}'],
+  sched:  ['Installation schedule','Hi {name}, your solar installation is scheduled. Our team will arrive between 8:00–9:00 AM. Please ensure roof and mains access. — {company}'],
+  done:   ['System commissioned','Congrats {name}! Your solar PV system is now live and producing. Monitoring and warranty documents follow via email. — {company}'],
+  bill:   ['Payment reminder','Hi {name}, friendly reminder: your remaining balance for the solar installation is due. GCash/BPI details available on request. — {company}']
+};
+function ntRender(){
+  el('ntTpl').innerHTML = '<option value="">— free text —</option>' + Object.entries(NT_TPLS).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('');
+  el('ntLog').innerHTML = DB.notifLog.slice(-30).reverse().map(n=>`<div class="feedItem"><span class="when">${n.t.slice(5,16).replace('T',' ')}</span><span><span class="tag ${n.ok?'ok':'warn'}">${n.ch.toUpperCase()}</span> → ${esc(n.to)} · ${esc(n.msg.slice(0,70))}${n.msg.length>70?'…':''}</span></div>`).join('') || '<div style="color:var(--mute);font-size:12px">No notifications sent yet.</div>';
+}
+function ntApplyTpl(proj){
+  const k = el('ntTpl').value; if(!k) return;
+  let m = NT_TPLS[k][1]
+    .replace('{name}', el('ntName').value||'there')
+    .replace('{company}', DB.settings.company)
+    .replace('{contact}', DB.settings.contact.split('·')[0].trim())
+    .replace('{stage}', proj?.stage || 'next')
+    .replace('{value}', proj? peso(proj.value):'(amount)');
+  el('ntMsg').value = m;
+}
+async function ntSend(ch){
+  const name=el('ntName').value.trim(), phone=el('ntPhone').value.replace(/\D/g,''), email=el('ntEmail').value.trim(), msg=el('ntMsg').value.trim();
+  if(!msg){ toast('Write a message first','warn'); return; }
+  let ok=true;
+  if(ch==='whatsapp'){ if(!phone) return toast('Phone required','warn'); window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank'); }
+  else if(ch==='viber'){ if(!phone) return toast('Phone required','warn'); window.open('viber://chat?number=%2B'+phone,'_blank'); copyText(msg,'Message copied — paste in Viber'); }
+  else if(ch==='messenger'){ window.open('https://m.me/?text='+encodeURIComponent(msg),'_blank'); copyText(msg,'Message copied — paste in Messenger'); }
+  else if(ch==='email'){
+    if(!email) return toast('Email required','warn');
+    ok = await gasCall({action:'notify', channel:'email', to:email, subject:'NEXSOLAR — '+(NT_TPLS[el('ntTpl').value]?.[0]||'Update'), message:msg});
+    if(!ok){ window.open('mailto:'+email+'?subject='+encodeURIComponent('NEXSOLAR Update')+'&body='+encodeURIComponent(msg)); toast('Backend offline — opened mail app instead','warn'); }
+  }
+  else if(ch==='sms'){
+    if(!phone) return toast('Phone required','warn');
+    ok = await gasCall({action:'notify', channel:'sms', to:phone, message:msg});
+    if(!ok){ window.open('sms:+'+phone+'?body='+encodeURIComponent(msg)); toast('Backend offline — opened SMS app instead','warn'); }
+  }
+  DB.notifLog.push({t:nowISO(), ch, to: email||phone||name||'—', msg, ok:!!ok}); save(); ntRender();
+}
+
+/* =========================== INTEGRATIONS =========================== */
+function integRender(){
+  if(!DB.settings.apiKey){ DB.settings.apiKey = 'NXS_' + crypto.getRandomValues(new Uint32Array(3)).reduce((s,x)=>s+x.toString(36),''); save(); }
+  el('apiKey').value = DB.settings.apiKey;
+  el('whList').innerHTML = DB.webhooks.map((w,i)=>`<div class="feedItem"><span style="flex:1" class="mono" style="font-size:12px">${esc(w.url)}</span><span class="tag cyan">${w.ev}</span><button class="btn sm ghost" onclick="whDel(${i})">✕</button></div>`).join('') || '<div style="color:var(--mute);font-size:12px;margin-bottom:8px">No webhooks yet.</div>';
+}
+function apiKeyRegen(){ DB.settings.apiKey = 'NXS_' + crypto.getRandomValues(new Uint32Array(3)).reduce((s,x)=>s+x.toString(36),''); save(); integRender(); toast('API key regenerated'); }
+function whAdd(){
+  const url = el('whUrl').value.trim(); if(!/^https:\/\//.test(url)) return toast('Enter an https:// URL','warn');
+  DB.webhooks.push({url, ev:el('whEvent').value}); save(); el('whUrl').value=''; integRender(); toast('Webhook added');
+}
+function whDel(i){ DB.webhooks.splice(i,1); save(); integRender(); }
+function fireWebhooks(event, payload){
+  DB.webhooks.filter(w=>w.ev==='all'||event.startsWith(w.ev.split('.')[0])||w.ev===event).forEach(w=>{
+    fetch(w.url, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({source:'NEXSOLAR', event, t:nowISO(), payload})}).catch(()=>{});
+  });
+}
+/* Excel exchange (SheetJS) */
+function exportXLSX(){
+  if(typeof XLSX==='undefined') return toast('SheetJS not loaded (offline?) — use JSON backup','warn');
+  const wb = XLSX.utils.book_new();
+  const sheets = {Inventory:DB.inventory, Projects:DB.projects, Sales:DB.sales.map(s=>({or:s.or,t:s.t,total:s.total,pay:s.pay,items:JSON.stringify(s.items)})), Designs:DB.designs.map(d=>({id:d.id,t:d.t,client:d.client,loc:d.loc,kwp:d.calc?.arrKw||'',cost:d.calc?.sysCost||''})), Movements:DB.moves, NotifLog:DB.notifLog, BOQ:DB.boqs.flatMap(b=>b.rows.map((r,i)=>({boq:b.id,client:b.client,item:i+1,desc:r.d,unit:r.u,qty:r.q,unit_price:r.p,amount:r.q*r.p})))};
+  for(const [nm,rows] of Object.entries(sheets)) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length?rows:[{}]), nm);
+  XLSX.writeFile(wb, 'NEXSOLAR_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  toast('Excel workbook exported');
+}
+function importXLSX(inp){
+  const f = inp.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = e => {
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      if(wb.SheetNames.includes('Inventory')){
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Inventory']);
+        rows.forEach(r=>{ const ex = DB.inventory.find(i=>i.sku===r.sku); if(ex) Object.assign(ex, r); else DB.inventory.push({id:uid('I'), min:5, rfid:'', ...r}); });
+      }
+      if(wb.SheetNames.includes('Projects')){
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Projects']);
+        rows.forEach(r=>{ const ex = DB.projects.find(p=>p.id===r.id); if(ex) Object.assign(ex,r); else DB.projects.push({id:uid('P'), created:nowISO(), stage:'Lead', ...r}); });
+      }
+      save(); invRender(); toast('Excel imported & merged');
+    }catch(err){ toast('Import failed: '+err.message,'err'); }
+  };
+  rd.readAsArrayBuffer(f); inp.value='';
+}
+function exportJSON(){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(DB,null,1)],{type:'application/json'}));
+  a.download = 'NEXSOLAR_backup_' + Date.now() + '.json'; a.click();
+}
+function importJSON(inp){
+  const f = inp.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = e => { try{ const d = JSON.parse(e.target.result); for(const k in DEFAULTS) if(!(k in d)) d[k]=DEFAULTS[k]; DB=d; save(); toast('Backup restored — reloading'); setTimeout(()=>location.reload(),800); }catch(err){ toast('Bad file: '+err.message,'err'); } };
+  rd.readAsText(f); inp.value='';
+}
+
+/* =========================== LICENSING UI =========================== */
+function licRender(){
+  el('licCards').innerHTML = Object.entries(TIERS).map(([k,t])=>`
+    <div class="card" style="border-color:${k===DB.license.tier?'var(--yellow)':'var(--line)'};margin:0">
+      <h3 style="color:${k===DB.license.tier?'var(--yellow)':'var(--cyan)'}">${k} ${k===DB.license.tier?'· ACTIVE':''}</h3>
+      <div style="font-family:var(--font-d);font-size:18px;color:#fff;margin-bottom:6px">${t.price}</div>
+      <div style="font-size:12px;color:var(--dim)">${t.desc}</div>
+    </div>`).join('');
+  el('licStatus').textContent = DB.license.key ? `Active key: ${DB.license.key} · expires ${DB.license.expiry}` : 'No key activated — running LITE evaluation.';
+  el('licIssuerCard').style.display = (SESSION.role==='Admin') ? '' : 'none';
+  if(!el('licGenExp').value){ const d = new Date(); d.setFullYear(d.getFullYear()+1); el('licGenExp').value = d.toISOString().slice(0,10); }
+}
+async function licActivate(){
+  const r = await licVerify(el('licKeyIn').value);
+  if(!r.ok){ toast(r.why,'err'); return; }
+  DB.license = {tier:r.tier, key:el('licKeyIn').value.trim().toUpperCase(), expiry:r.expiry}; save();
+  el('licChip').textContent = r.tier + ' · ' + r.expiry;
+  buildNav(); licRender(); toast(r.tier + ' license activated ✔ — reloading modules');
+  setTimeout(()=>location.reload(), 900);
+}
+async function licGenerate(){
+  const exp = el('licGenExp').value.replace(/-/g,''); if(exp.length!==8) return toast('Pick an expiry date','warn');
+  const key = await licMakeKey(el('licGenTier').value, exp);
+  el('licGenOut').textContent = key; copyText(key,'License key copied');
+}
+
+/* =========================== USERS =========================== */
+function usRender(){
+  el('usTable').querySelector('tbody').innerHTML = DB.users.map(u=>
+    `<tr><td><b>${esc(u.name)}</b><div class="mono" style="font-size:11px;color:var(--dim)">${esc(u.user)}</div></td>
+    <td><span class="tag cyan">${u.role}</span></td>
+    <td style="font-size:11px;color:var(--dim)">${(ROLES[u.role]||[]).join(' · ')}</td>
+    <td style="white-space:nowrap"><button class="btn sm ghost" onclick="usEdit('${u.id}')">✎</button> ${u.user!=='admin'?`<button class="btn sm ghost" onclick="usDel('${u.id}')">✕</button>`:''}</td></tr>`).join('');
+  el('usMatrix').innerHTML = Object.entries(ROLES).map(([r,m])=>`<div style="margin-bottom:6px"><b style="color:var(--cyan);font-family:var(--font-d)">${r}</b> — ${m.join(', ')}</div>`).join('');
+}
+function usNew(){ usForm({id:'',name:'',user:'',role:'Sales'}); }
+function usEdit(id){ const u = DB.users.find(x=>x.id===id); if(u) usForm(u); }
+function usForm(u){
+  modal(`<h3>${u.id?'Edit user':'New user'}</h3>
+  <div class="grid2"><div><label>Full name</label><input id="ufName" value="${esc(u.name)}"></div>
+  <div><label>Username</label><input id="ufUser" value="${esc(u.user)}" ${u.user==='admin'?'readonly':''}></div></div>
+  <label>Role</label><select id="ufRole">${Object.keys(ROLES).map(r=>`<option ${r===u.role?'selected':''}>${r}</option>`).join('')}</select>
+  <label>${u.id?'New password (blank = keep)':'Password'}</label><input id="ufPass" type="password" autocomplete="new-password">
+  <div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Cancel</button><button class="btn sm" onclick="usSave('${u.id}')">Save</button></div>`);
+}
+async function usSave(id){
+  const name=el('ufName').value.trim(), user=el('ufUser').value.trim(), role=el('ufRole').value, pass=el('ufPass').value;
+  if(!name||!user) return toast('Name and username required','warn');
+  if(!id && !pass) return toast('Password required for new user','warn');
+  if(!id && DB.users.some(u=>u.user===user)) return toast('Username taken','warn');
+  if(id){ const u = DB.users.find(x=>x.id===id); u.name=name; u.role=role; if(pass){ const c=await pbkdf2(pass); u.salt=c.salt; u.hash=c.hash; } }
+  else { const c = await pbkdf2(pass); DB.users.push({id:uid('U'), name, user, role, salt:c.salt, hash:c.hash}); }
+  save(); modalClose(); usRender(); toast('User saved');
+}
+function usDel(id){ DB.users = DB.users.filter(x=>x.id!==id); save(); usRender(); }
+
+/* =========================== SETTINGS + CLOUD SYNC =========================== */
+function setRender(){
+  el('setGasUrl').value = DB.settings.gasUrl; el('setSemKey').value = DB.settings.semKey;
+  el('setSemSender').value = DB.settings.semSender; el('setCo').value = DB.settings.company; el('setContact').value = DB.settings.contact;
+  el('setSyncInfo').textContent = DB.settings.lastSync ? 'last sync ' + DB.settings.lastSync.slice(0,16).replace('T',' ') : 'never synced';
+  el('setQueueN').textContent = DB.queue.length;
+  el('gasCode').textContent = document.getElementById('gasSrc').textContent.trim();
+}
+function saveSettings(){
+  Object.assign(DB.settings, {gasUrl:el('setGasUrl').value.trim(), semKey:el('setSemKey').value.trim(), semSender:el('setSemSender').value.trim(), company:el('setCo').value.trim(), contact:el('setContact').value.trim()});
+  save(); toast('Settings saved');
+}
+async function gasCall(payload){
+  if(!DB.settings.gasUrl) return false;
+  try{
+    payload.key = DB.settings.apiKey; payload.semKey = DB.settings.semKey; payload.semSender = DB.settings.semSender;
+    const res = await fetch(DB.settings.gasUrl, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'payload='+encodeURIComponent(JSON.stringify(payload))});
+    const j = await res.json(); return j && j.ok;
+  }catch(e){ return false; }
+}
+let syncing=false;
+async function syncNow(silent){
+  if(syncing) return; if(!DB.settings.gasUrl){ if(!silent) toast('Set the Apps Script URL first','warn'); return; }
+  if(!DB.queue.length){ if(!silent) toast('Nothing to sync — queue empty'); el('syncChip').textContent='SYNCED'; el('syncChip').className='chip on'; return; }
+  syncing = true; el('syncChip').textContent='SYNC…';
+  const batch = DB.queue.slice(0,50);
+  const ok = await gasCall({action:'sync', batch});
+  if(ok){
+    DB.queue = DB.queue.slice(batch.length); DB.settings.lastSync = nowISO(); save();
+    el('syncChip').textContent = DB.queue.length? 'QUEUE '+DB.queue.length : 'SYNCED';
+    el('syncChip').className='chip on';
+    if(!silent) toast('Synced '+batch.length+' changes to Google Sheets');
+    if(DB.queue.length){ syncing=false; return syncNow(true); }
+  } else {
+    el('syncChip').textContent='QUEUE '+DB.queue.length; el('syncChip').className='chip off';
+    if(!silent) toast('Sync failed — changes stay queued on this device','warn');
+  }
+  syncing = false; el('setQueueN') && (el('setQueueN').textContent = DB.queue.length);
+}
+
+/* =========================== INIT / PWA =========================== */
+async function init(){
+  await ensureAdmin();
+  el('gasCode').textContent = document.getElementById('gasSrc').textContent.trim();
+  const ses = sessionStorage.getItem('NEXSOLAR_SES');
+  if(ses){ SESSION = JSON.parse(ses); enterApp(); }
+  // license expiry check
+  if(DB.license.key){ const r = await licVerify(DB.license.key); if(!r.ok){ DB.license={tier:'LITE',key:'',expiry:''}; save(); } }
+  // PWA: register a minimal cache-first service worker from a blob
+  if('serviceWorker' in navigator && location.protocol==='https:'){
+    const sw = `const C='nexsolar-v1';self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.open(C).then(async c=>{try{const r=await fetch(e.request);if(e.request.url.startsWith(self.location.origin)||e.request.url.includes('fonts')||e.request.url.includes('cdnjs'))c.put(e.request,r.clone());return r}catch(_){const m=await c.match(e.request);return m||Response.error()}}))});`;
+    try{ navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'text/javascript'}))); }catch(e){}
+  }
+  // auto CYRA sweep every 10 min
+  setInterval(()=>{ if(SESSION && hasFeat('cyra')) cyraRun(false); }, 600000);
+  setInterval(()=>{ if(SESSION && navigator.onLine && DB.queue.length) syncNow(true); }, 60000);
+}
+addEventListener('resize', ()=>{ const act = document.querySelector('.page.act'); if(!act) return; if(act.id==='pg-bi') biRender(); if(act.id==='pg-dash') renderDash(); if(act.id==='pg-cyra') cyraRender(); if(act.id==='pg-circuit') ccChart(); });
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+<script>
+/* =========================================================
+   CIRCUIT MODULE — single-line diagram · wire sizing · BOQ ·
+   live power-flow simulation (NEXSOLAR / CYRABELL)
+   ========================================================= */
+'use strict';
+let CC = { c:null, h:6, playing:false, timer:null, soc:65, faults:{grid:false,string:false,trip:false}, boq:[], boqClient:'' };
+
+function ccRender(){ ccGenerate(true); }
+function ccPerString(){
+  const voc = +el('dsVoc').value||51.5, maxV = +el('dsMaxV').value||600;
+  return Math.max(1, Math.floor(maxV/(voc*1.25)));
+}
+function ccGenerate(keepBoq){
+  if((!DS.calc || !DS.calc.nPanels) && DB.designs.length){ const d = DB.designs.at(-1); if(d.calc){ DS.calc = d.calc; CC.boqClient = d.client; } }
+  if(!DS.calc || !DS.calc.nPanels){
+    el('ccSysTag').textContent = 'no design loaded';
+    el('ccSLDWrap').innerHTML = '<div style="padding:30px;color:var(--mute);text-align:center">No system sized yet.<br>Open the Design Studio, add the load profile, then tap ⚡ Circuit diagram — the SLD, wire sizing and BOQ generate themselves.</div>';
+    return;
+  }
+  CC.c = DS.calc;
+  CC.boqClient = el('dsClient') && el('dsClient').value ? el('dsClient').value : CC.boqClient;
+  el('ccSysTag').textContent = CC.c.arrKw.toFixed(1)+' kWp · '+CC.c.nPanels+' panels · '+({grid:'grid-tie',hybrid:'hybrid',off:'off-grid'})[CC.c.type];
+  (CC.view==='detail'? ccBuildDetail() : ccBuildSLD()); ccWires();
+  if(!keepBoq || !CC.boq.length) ccBoqBuild();
+  ccBoqRender(); ccTick(true); ccChart();
+}
+
+/* ---------- SLD ---------- */
+function ccBuildSLD(){
+  const c = CC.c, t = c.type;
+  const perStr = Math.min(ccPerString(), c.nPanels);
+  const nStr = Math.ceil(c.nPanels/perStr);
+  const B = (id,x,y,w,h,l1,l2) => `<rect id="${id}" class="sldBox" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
+    <text class="sldTxt" x="${x+w/2}" y="${y+h/2-3}" text-anchor="middle">${l1}</text>
+    <text class="sldSub" x="${x+w/2}" y="${y+h/2+11}" text-anchor="middle">${l2}</text>`;
+  let s = `<svg id="ccSLD" viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg">`;
+  // wires first (under boxes)
+  s += `<path id="wPV"   class="wire" d="M142,105 L205,105"/>`;
+  s += `<path id="wDC"   class="wire" d="M300,105 L345,105"/>`;
+  if(t!=='grid') s += `<path id="wBatt" class="wire" d="M410,148 L410,185"/>`;
+  s += `<path id="wAC"   class="wire" d="M475,105 L515,105"/>`;
+  if(t!=='off'){ s += `<path id="wGrid" class="wire" d="M590,105 L625,105 L625,72"/>`; }
+  s += `<path id="wLoad" class="wire" d="M590,105 L648,105 L648,158"/>`;
+  // boxes
+  s += B('bPV', 22,65,120,80, `PV ARRAY ${c.arrKw.toFixed(1)}kWp`, `${nStr}S × ${perStr}P · ${c.nPanels}×${el('dsPanelW').value}W`);
+  s += B('bDC', 205,80,95,50, 'DC COMBINER', 'brkr + SPD II');
+  s += B('bInv',345,65,130,83, (t==='grid'?'GRID-TIE INV':'HYBRID INV'), `${c.invPick} kW · MPPT`);
+  if(t!=='grid') s += B('bBatt',352,185,116,48, 'BATTERY BANK', `${c.battUnits}× · ${c.bankKwh.toFixed(1)} kWh`);
+  s += B('bBrk',515,85,75,40, 'AC BRKR', 'RCBO');
+  if(t!=='off') s += B('bGrid',585,25,110,47, 'NET METER · GRID', 'RA 9513 export');
+  s += B('bLoad',608,158,88,47, 'LOADS', `${(c.peak/1000).toFixed(1)} kW peak`);
+  s += `</svg>`;
+  el('ccSLDWrap').innerHTML = s;
+}
+
+/* ---------- wire & protection sizing ---------- */
+const CU = 0.0175; // Ω·mm²/m
+const CABLES = [[4,40],[6,55],[10,75],[16,100],[25,130]];
+const BRKS = [16,20,25,32,40,50,63,80,100,125];
+function ccPick(amps){ for(const [a,cap] of CABLES) if(cap>=amps) return a; return 35; }
+function ccBrk(amps){ for(const b of BRKS) if(b>=amps) return b; return 160; }
+function ccWires(){
+  const c = CC.c;
+  const voc=+el('dsVoc').value||51.5, pW=+el('dsPanelW').value||580;
+  const perStr = Math.min(ccPerString(), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  const vmpStr = voc*0.82*perStr, imp = pW/(voc*0.82);
+  const iDC = imp*1.25, iDCtot = imp*nStr*1.25;
+  const iAC = c.invPick*1000/230*1.25;
+  const lDC=+el('ccLenDC').value||15, lAC=+el('ccLenAC').value||10;
+  const rows = [];
+  const seg = (name,i,v,len)=>{ const mm=ccPick(i); const vd=2*i/1.25*len*CU/mm; return {name, i, mm, vdp:(vd/v*100)}; };
+  const s1 = seg('String → combiner', iDC, vmpStr, lDC);
+  const s2 = seg('Combiner → inverter (DC)', iDCtot, vmpStr, lDC);
+  const s3 = seg('Inverter → AC panel', iAC, 230, lAC);
+  rows.push([s1.name, iDC.toFixed(1), `PV1-F ${s1.mm} mm²`, s1.vdp.toFixed(2)+'%', `Fuse ${Math.ceil(iDC/5)*5}A / string`]);
+  rows.push([s2.name, iDCtot.toFixed(1), `PV1-F ${s2.mm} mm²`, s2.vdp.toFixed(2)+'%', `DC brkr ${ccBrk(iDCtot)}A · SPD T2`]);
+  if(c.type!=='grid'){
+    const iB = c.invPick*1000/51.2*1.25;
+    const sb = seg('Battery ↔ inverter', iB, 51.2, 3);
+    rows.push([sb.name, iB.toFixed(0), `THHN ${sb.mm} mm²`, sb.vdp.toFixed(2)+'%', `DC brkr ${ccBrk(iB)}A + Class-T fuse`]);
+  }
+  rows.push([s3.name, iAC.toFixed(1), `THHN ${s3.mm} mm² + G`, s3.vdp.toFixed(2)+'%', `RCBO ${ccBrk(iAC)}A 30mA`]);
+  rows.push(['Grounding electrode', '—', 'BC 16 mm²', '—', '≤ 5 Ω per PEC']);
+  el('ccWires').querySelector('tbody').innerHTML = rows.map(r=>{
+    const warn = parseFloat(r[3])>3;
+    return `<tr><td>${r[0]}</td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td><span class="tag ${warn?'warn':'ok'}">${r[3]}</span></td><td style="font-size:12px">${r[4]}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- simulation ---------- */
+function ccIrr(h){ const x=(h-12.25)/4.2; return Math.max(0, Math.exp(-x*x)); }
+function ccLoadW(h){ if(h<5) return 0.55; if(h<9) return 1.25; if(h<17) return 0.85; if(h<22) return 1.9; return 0.8; }
+function ccLoadKw(h){
+  const daily = CC.c.daily||0; let sum=0; for(let x=0;x<24;x+=0.5) sum += ccLoadW(x)*0.5;
+  return daily>0 ? daily*ccLoadW(h)/sum : 0;
+}
+function ccStep(h, socIn){
+  const c = CC.c, F = CC.faults, dt = 0.5;
+  const perStr = Math.min(ccPerString(), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  let pv = c.arrKw * ccIrr(h) * (+el('dsEff').value||0.8);
+  if(F.string) pv *= Math.max(0,(nStr-1))/nStr;
+  let load = ccLoadKw(h), served = load, batt = 0, grid = 0, soc = socIn, alarms = [];
+  if(c.type==='grid'){
+    if(F.grid){ pv = 0; served = 0; alarms.push(['bad','Grid outage — inverter anti-islanding shutdown. PV offline, loads dark (no storage in grid-tie).']); }
+    else if(F.trip){ served = 0; grid = -pv; alarms.push(['warn','AC breaker tripped — loads disconnected; PV still exporting upstream? Check RCBO.']); }
+    else grid = load - pv; // + import / − export
+  } else {
+    const bank = c.bankKwh||0.1;
+    let net = pv - (F.trip ? 0 : load);
+    if(F.trip){ served = 0; alarms.push(['warn','AC breaker tripped — loads disconnected. PV charging battery.']); }
+    if(net >= 0){
+      const room = (100-soc)/100*bank/dt;
+      batt = Math.min(net, room, c.invPick); // charging kW (+)
+      const excess = net - batt;
+      if(c.type==='hybrid' && !F.grid) grid = -excess;
+      soc += batt*dt/bank*100;
+    } else {
+      const avail = Math.max(0,(soc-10))/100*bank/dt;
+      const dis = Math.min(-net, avail, c.invPick);
+      batt = -dis; soc -= dis*dt/bank*100;
+      let deficit = -net - dis;
+      if(deficit>0.01){
+        if(c.type==='hybrid' && !F.grid) grid = deficit;
+        else { served = Math.max(0, load - deficit); alarms.push(['bad','Battery depleted — load shed '+deficit.toFixed(2)+' kW'+(c.type==='hybrid'?' (grid down)':' (off-grid)')+'.']); }
+      }
+    }
+    if(F.grid && c.type==='hybrid') alarms.push(['warn','Grid outage — hybrid inverter in backup (EPS) mode.']);
+    if(soc<15) alarms.push(['warn','Battery SOC low: '+soc.toFixed(0)+'%']);
+  }
+  if(F.string) alarms.push(['warn','String fault isolated — array derated to '+Math.max(0,nStr-1)+'/'+nStr+' strings.']);
+  return {pv, load, served, batt, grid, soc:Math.min(100,Math.max(0,soc)), alarms};
+}
+function ccTick(manual){
+  if(!CC.c) return;
+  if(!manual){ CC.h += 0.5; if(CC.h>=24) CC.h = 0; el('ccHour').value = CC.h; }
+  const r = ccStep(CC.h, CC.soc); CC.soc = r.soc;
+  const hh = Math.floor(CC.h), mm = CC.h%1?'30':'00';
+  el('ccClock').textContent = String(hh).padStart(2,'0')+':'+mm;
+  const t = CC.c.type;
+  el('ccGauges').innerHTML = [
+    ['y', r.pv.toFixed(2)+' kW', 'PV production'],
+    ['c', r.served.toFixed(2)+' kW', 'Load served'+(r.served<r.load-0.01?' ⚠':'')],
+    t!=='grid' ? ['g', r.soc.toFixed(0)+'% · '+(r.batt>=0?'+':'')+r.batt.toFixed(2)+' kW', 'Battery SOC · flow'] : ['', '—', 'No storage (grid-tie)'],
+    t!=='off' ? [r.grid>0?'r':'g', (r.grid>0?'+':'')+r.grid.toFixed(2)+' kW', r.grid>0?'Grid import':'Grid export (net-meter)'] : ['','—','Off-grid']
+  ].map(([c2,v,l])=>`<div class="kpi"><div class="v ${c2}" style="font-size:18px">${v}</div><div class="l">${l}</div></div>`).join('');
+  el('ccAlarms').innerHTML = r.alarms.map(([s,m])=>`<span class="tag ${s}" style="margin:2px;display:inline-block">${m}</span>`).join('');
+  // animate wires
+  const W = (id, on, cls) => { const w = document.getElementById(id); if(!w) return; w.setAttribute('class', 'wire ' + (on? 'on '+(cls||'') : 'dead')); };
+  W('wPV', r.pv>0.03); W('wDC', r.pv>0.03 && !(t==='grid'&&CC.faults.grid));
+  W('wBatt', Math.abs(r.batt)>0.03, r.batt>0? 'chg' : 'rev');
+  W('wAC', (r.served>0.03 || Math.abs(r.grid)>0.03) && !CC.faults.trip, 'ac');
+  W('wLoad', r.served>0.03 && !CC.faults.trip, 'ac');
+  W('wGrid', Math.abs(r.grid)>0.03 && !CC.faults.grid, 'ac ' + (r.grid>0?'rev':''));
+  const bx = (id,f)=>{ const b=document.getElementById(id); if(b) b.setAttribute('class','sldBox'+(f?' fault':'')); };
+  bx('bGrid', CC.faults.grid); bx('bPV', CC.faults.string); bx('bBrk', CC.faults.trip);
+}
+function ccPlay(){
+  CC.playing = !CC.playing;
+  el('ccPlayBtn').textContent = CC.playing? '❚❚ Pause' : '▶ Run simulation';
+  clearInterval(CC.timer);
+  if(CC.playing) CC.timer = setInterval(()=>ccTick(false), +el('ccSpeed').value);
+}
+function ccSetHour(v){ CC.h = +v; ccTick(true); }
+function ccFault(k){
+  CC.faults[k] = !CC.faults[k];
+  const map = {grid:'ccFGrid', string:'ccFStr', trip:'ccFTrip'};
+  el(map[k]).className = 'btn sm ' + (CC.faults[k] ? 'danger' : 'ghost');
+  if(CC.faults[k]) cyraLogAdd('warn','Simulation fault injected: '+k);
+  ccTick(true);
+}
+function ccChart(){
+  if(!CC.c) return;
+  const pvA=[], ldA=[], socA=[], lbs=[]; let soc=60;
+  let maxKw = 0.1;
+  for(let h=0;h<24;h+=0.5){ const r = ccStep(h, soc); soc = r.soc; pvA.push(r.pv); ldA.push(r.load); socA.push(soc); lbs.push(h%3===0? String(h).padStart(2,'0')+'h' : ''); maxKw = Math.max(maxKw, r.pv, r.load); }
+  drawLine('ccChart', [pvA, ldA, socA.map(s=>s/100*maxKw)], lbs, ['#FFD60A','#00C2D1','#2FD672']);
+}
+
+/* ---------- BOQ ---------- */
+function ccPrice(cat, fb){ const i = DB.inventory.find(x=>x.cat===cat); return i? i.price : fb; }
+function ccSku(cat){ const i = DB.inventory.find(x=>x.cat===cat); return i? i.sku : ''; }
+function ccBoqBuild(){
+  const c = CC.c, pW=+el('dsPanelW').value||580;
+  const perStr = Math.min(ccPerString(), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  const lDC=+el('ccLenDC').value||15, lAC=+el('ccLenAC').value||10;
+  const rows = [
+    {d:`PV module ${pW}Wp mono PERC`, u:'pcs', q:c.nPanels, p:ccPrice('Panels',9800)},
+    {d:`${c.type==='grid'?'Grid-tie':'Hybrid'} inverter ${c.invPick} kW`, u:'unit', q:1, p:ccPrice('Inverters',68500)},
+  ];
+  if(c.type!=='grid' && c.battUnits) rows.push({d:`LiFePO4 battery ${el('dsBattKwh').value} kWh 51.2V`, u:'unit', q:c.battUnits, p:ccPrice('Batteries',62000)});
+  rows.push(
+    {d:'Aluminum mounting rail 4.2 m', u:'pcs', q:Math.ceil(c.nPanels*2.3/4.2), p:ccPrice('Mounting',950)},
+    {d:'Mid/end clamp set + L-feet', u:'set', q:c.nPanels*2, p:85},
+    {d:'PV cable 6 mm² (PV1-F)', u:'m', q:Math.ceil(2*lDC + nStr*10), p:ccPrice('Cables',65)},
+    {d:'MC4 connector pair', u:'pair', q:nStr*2+2, p:120},
+    {d:`String fuse + holder`, u:'pcs', q:nStr, p:350},
+    {d:'DC breaker 2P 500V', u:'pcs', q:1, p:ccPrice('Protection',850)},
+    {d:'DC SPD Type II', u:'pcs', q:1, p:1650},
+    {d:'AC RCBO 2P 30 mA', u:'pcs', q:1, p:1450},
+    {d:'THHN AC cable + ground', u:'m', q:lAC*3, p:120}
+  );
+  if(c.type!=='off') rows.push({d:'Bi-directional net meter + application', u:'lot', q:1, p:ccPrice('Metering',12500)});
+  rows.push(
+    {d:'Grounding kit (rod, clamp, BC wire)', u:'lot', q:1, p:3500},
+    {d:'Conduit, trunking, fittings, sealant', u:'lot', q:1, p:2800}
+  );
+  const mat = rows.reduce((s,r)=>s+r.q*r.p, 0);
+  rows.push({d:'Installation labor, T&C, documentation', u:'lot', q:1, p:Math.round(mat*0.15)});
+  CC.boq = rows;
+}
+function ccBoqRender(){
+  el('ccBoq').querySelector('tbody').innerHTML = CC.boq.map((r,i)=>
+    `<tr><td class="mono">${i+1}</td><td>${esc(r.d)}</td><td>${r.u}</td>
+    <td style="max-width:80px"><input type="number" value="${r.q}" style="padding:5px 7px" oninput="ccBoqEdit(${i},'q',this.value)"></td>
+    <td style="max-width:110px"><input type="number" value="${r.p}" style="padding:5px 7px" oninput="ccBoqEdit(${i},'p',this.value)"></td>
+    <td class="mono">${(r.q*r.p).toLocaleString()}</td>
+    <td><button class="btn sm ghost" onclick="CC.boq.splice(${i},1);ccBoqRender()">✕</button></td></tr>`).join('');
+  const tot = CC.boq.reduce((s,r)=>s+r.q*r.p,0);
+  el('ccBoqTotalTag').textContent = peso(tot);
+}
+function ccBoqEdit(i,f,v){ CC.boq[i][f] = +v||0; const tot = CC.boq.reduce((s,r)=>s+r.q*r.p,0); el('ccBoqTotalTag').textContent = peso(tot); const row = el('ccBoq').querySelectorAll('tbody tr')[i]; if(row) row.cells[5].textContent = (CC.boq[i].q*CC.boq[i].p).toLocaleString(); }
+function ccBoqAddRow(){ CC.boq.push({d:'New line item', u:'lot', q:1, p:0}); ccBoqRender(); }
+function ccBoqSave(){
+  if(!CC.boq.length) return toast('BOQ is empty','warn');
+  const rec = {id:uid('B'), t:nowISO(), client:CC.boqClient||'—', kwp:CC.c?CC.c.arrKw:0, rows:CC.boq, total:CC.boq.reduce((s,r)=>s+r.q*r.p,0)};
+  DB.boqs.push(rec); queue('boqs','saved',{id:rec.id, client:rec.client, total:rec.total}); save();
+  toast('BOQ saved — '+peso(rec.total));
+}
+function ccBoqToProject(){
+  if(!DB.projects.length) return toast('No projects yet','warn');
+  modal('<h3>Attach BOQ to project</h3>' + DB.projects.map(p=>`<div class="kcard" onclick="ccBoqAttach('${p.id}')"><div class="nm">${esc(p.name)}</div><div class="mt">${p.stage} · ${peso(p.value)}</div></div>`).join('') + '<div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Cancel</button></div>');
+}
+function ccBoqAttach(pid){
+  const p = DB.projects.find(x=>x.id===pid); if(!p) return;
+  const tot = CC.boq.reduce((s,r)=>s+r.q*r.p,0);
+  p.value = Math.round(tot); p.notes = (p.notes?p.notes+'\n':'') + 'BOQ '+new Date().toISOString().slice(0,10)+': '+CC.boq.length+' items · '+peso(tot);
+  queue('projects','upsert',p); save(); modalClose(); toast('BOQ attached — project value updated to '+peso(tot));
+}
+function ccBoqPrint(){
+  if(!CC.boq.length) return toast('BOQ is empty','warn');
+  const tot = CC.boq.reduce((s,r)=>s+r.q*r.p,0);
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>NEXSOLAR BOQ</title><style>
+  body{font-family:Inter,Arial,sans-serif;color:#111;max-width:780px;margin:24px auto;padding:0 18px}
+  h1{font-family:'Chakra Petch',sans-serif;color:#0A1F44}h1 b{color:#C79100}
+  .bar{height:5px;background:linear-gradient(90deg,#FFD60A,#00B8D9);border-radius:3px;margin:8px 0 16px}
+  table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccd;padding:7px;font-size:12px;text-align:left}
+  th{background:#0A1F44;color:#fff;font-family:'Chakra Petch',sans-serif}td.n{text-align:right;font-family:'JetBrains Mono',monospace}
+  .ft{margin-top:26px;font-size:11px;color:#556}</style></head><body>
+  <h1>NEX<b>SOLAR</b> — Bill of Quantities</h1><div class="bar"></div>
+  <p><b>Client:</b> ${esc(CC.boqClient||'—')} &nbsp; <b>System:</b> ${CC.c? CC.c.arrKw.toFixed(1)+' kWp '+CC.c.type : ''} &nbsp; <b>Date:</b> ${new Date().toLocaleDateString('en-PH')}</p>
+  <table><tr><th>#</th><th>Description</th><th>Unit</th><th>Qty</th><th>Unit ₱</th><th>Amount ₱</th></tr>
+  ${CC.boq.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.d)}</td><td>${r.u}</td><td class="n">${r.q}</td><td class="n">${r.p.toLocaleString()}</td><td class="n">${(r.q*r.p).toLocaleString()}</td></tr>`).join('')}
+  <tr><th colspan="5" style="text-align:right">TOTAL</th><th style="text-align:right">₱${tot.toLocaleString()}</th></tr></table>
+  <p style="font-size:11px">Prices are estimates for quotation purposes; final quantities subject to site survey. Validity 15 days.</p>
+  <div class="ft">${esc(DB.settings.company)} · ${esc(DB.settings.contact)}<br>Precision · Scale · Control</div>
+  <script>print()<\/script></body></html>`);
+  w.document.close();
+}
+
+
+/* =========================================================
+   v1.2 EXTENSIONS — detailed wiring diagram · project
+   lifecycle (open/update/delete, stages, tasks) · saved
+   design & BOQ managers
+   ========================================================= */
+CC.view = 'sld';
+function ccSetView(v){
+  CC.view = v;
+  el('ccVsld').className = 'btn sm ' + (v==='sld'?'':'ghost');
+  el('ccVdet').className = 'btn sm ' + (v==='detail'?'':'ghost');
+  if(!CC.c){ ccGenerate(true); return; }
+  if(v==='detail') ccBuildDetail(); else { ccBuildSLD(); ccTick(true); }
+}
+function ccPrintDiagram(){
+  const svg = el('ccSLDWrap').innerHTML;
+  if(!svg || svg.indexOf('<svg')<0) return toast('Generate a diagram first','warn');
+  const w = window.open('','_blank');
+  w.document.write('<html><head><title>NEXSOLAR — '+(CC.view==='detail'?'Detailed Wiring Diagram':'Single-Line Diagram')+'</title>'+
+  '<style>body{font-family:Inter,Arial;margin:16px}h1{font-family:"Chakra Petch",sans-serif;color:#0A1F44;font-size:20px}h1 b{color:#C79100}'+
+  '.bar{height:5px;background:linear-gradient(90deg,#FFD60A,#00B8D9);border-radius:3px;margin:6px 0 12px}'+
+  '.dwrap{background:#07142c;border-radius:8px;padding:10px}svg{width:100%;height:auto}'+
+  '.ft{margin-top:14px;font-size:11px;color:#556}</style></head><body>'+
+  '<h1>NEX<b>SOLAR</b> — '+(CC.view==='detail'?'Detailed Wiring Diagram':'Single-Line Diagram')+'</h1><div class="bar"></div>'+
+  '<div style="font-size:12px;margin-bottom:8px"><b>Client:</b> '+esc(CC.boqClient||'—')+' &nbsp; <b>System:</b> '+(CC.c? CC.c.arrKw.toFixed(1)+' kWp '+CC.c.type:'')+' &nbsp; <b>Date:</b> '+new Date().toLocaleDateString('en-PH')+'</div>'+
+  '<div class="dwrap">'+svg+'</div>'+
+  '<div class="ft">'+esc(DB.settings.company)+' · '+esc(DB.settings.contact)+' · Precision · Scale · Control — For construction. Verify against PEC 2017 and utility net-metering requirements.</div>'+
+  '<script>print()<\/script></body></html>');
+  w.document.close();
+}
+
+/* ---------- detailed wiring diagram ---------- */
+const DWC = { pos:'#FF6B6B', neg:'#4DA3FF', L:'#FFB020', N:'#7FD3FF', PE:'#2FD672', box:'#0E2650', line:'#1C3A6E' };
+function _w(pts, col, dash, wd){ return `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${wd||2}" ${dash?'stroke-dasharray="6 4"':''}/>`; }
+function _t(x,y,str,size,col,anchor,bold){ return `<text x="${x}" y="${y}" fill="${col||'#EAF2FF'}" font-size="${size||10}" text-anchor="${anchor||'start'}" font-family="${bold?'Chakra Petch':'JetBrains Mono'},monospace" ${bold?'font-weight="600"':''}>${str}</text>`; }
+function _box(x,y,w,h,label,sub){ return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${DWC.box}" stroke="${DWC.line}"/>` + (label?_t(x+w/2,y+15,label,11,'#EAF2FF','middle',1):'') + (sub?_t(x+w/2,y+27,sub,9,'#8FA6CC','middle'):''); }
+function _fuse(x,y,col){ return `<rect x="${x-9}" y="${y-5}" width="18" height="10" rx="2" fill="#07142c" stroke="${col}"/><line x1="${x-9}" y1="${y}" x2="${x+9}" y2="${y}" stroke="${col}" stroke-width="1.5"/>`; }
+function _brk(x,y,col){ return `<circle cx="${x-8}" cy="${y}" r="2.5" fill="${col}"/><circle cx="${x+8}" cy="${y}" r="2.5" fill="${col}"/><line x1="${x-8}" y1="${y}" x2="${x+7}" y2="${y-9}" stroke="${col}" stroke-width="2"/>`; }
+function _gnd(x,y){ return _w(`${x},${y} ${x},${y+8}`,DWC.PE) + `<line x1="${x-9}" y1="${y+8}" x2="${x+9}" y2="${y+8}" stroke="${DWC.PE}" stroke-width="2"/><line x1="${x-6}" y1="${y+12}" x2="${x+6}" y2="${y+12}" stroke="${DWC.PE}" stroke-width="2"/><line x1="${x-3}" y1="${y+16}" x2="${x+3}" y2="${y+16}" stroke="${DWC.PE}" stroke-width="2"/>`; }
+function _panel(x,y){ let g=`<rect x="${x}" y="${y}" width="34" height="46" rx="3" fill="#0a3a63" stroke="#00C2D1"/>`; for(let i=1;i<3;i++){ g+=`<line x1="${x+i*11.3}" y1="${y}" x2="${x+i*11.3}" y2="${y+46}" stroke="#0E5D86"/>`; } g+=`<line x1="${x}" y1="${y+23}" x2="${x+34}" y2="${y+23}" stroke="#0E5D86"/>`; return g; }
+function _batt(x,y){ let g=''; for(let i=0;i<3;i++){ g+=`<line x1="${x+i*16}" y1="${y}" x2="${x+i*16}" y2="${y+16}" stroke="#2FD672" stroke-width="3"/><line x1="${x+i*16+7}" y1="${y+4}" x2="${x+i*16+7}" y2="${y+12}" stroke="#2FD672" stroke-width="1.5"/>`; } return g; }
+
+function ccBuildDetail(){
+  const c = CC.c; if(!c) return;
+  const t = c.type, pW = +el('dsPanelW').value||580, voc=+el('dsVoc').value||51.5;
+  const perStr = Math.min(ccPerString(), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  const imp = pW/(voc*0.82), iDC=(imp*1.25).toFixed(1), iAC=(c.invPick*1000/230*1.25).toFixed(1);
+  const dcMM = ccPick(imp*1.25), dcTotMM = ccPick(imp*nStr*1.25), acMM = ccPick(c.invPick*1000/230*1.25);
+  const shown = Math.min(nStr,3);
+  let g = `<svg id="ccSLD" viewBox="0 0 1000 570" xmlns="http://www.w3.org/2000/svg" style="min-width:960px;display:block">`;
+
+  /* PE ground bus along bottom */
+  g += _w('60,530 940,530', DWC.PE, 1) + _t(500,545,'PROTECTIVE EARTH (PE) BUS — BC 16 mm² · ground resistance ≤ 5 Ω',9,DWC.PE,'middle');
+  g += _gnd(110,530) + _t(110,522,'ROD 5/8″×10′',8,DWC.PE,'middle');
+
+  /* strings */
+  for(let i=0;i<shown;i++){
+    const y = 45 + i*110;
+    g += _panel(30,y) + _panel(72,y);
+    g += _t(114,y+22,'⋯ ×'+perStr,10,'#8FA6CC');
+    g += _t(30,y-6,`STRING ${i+1} — ${perStr} × ${pW}W series · ${(voc*0.82*perStr).toFixed(0)}Vmp / ${imp.toFixed(1)}A`,9,'#EAF2FF');
+    g += _w(`106,${y+10} 150,${y+10} 150,${y+18} 210,${y+18}`, DWC.pos);          // + to fuse
+    g += _fuse(222,y+18,DWC.pos) + _t(222,y+6,`${Math.ceil(imp*1.25/5)*5}A gPV`,8,DWC.pos,'middle');
+    g += _w(`234,${y+18} 300,${y+18} 300,150`, DWC.pos);                           // + to busbar
+    g += _w(`106,${y+38} 320,${y+38} 320,150`, DWC.neg);                           // − to busbar
+    g += _w(`48,${y+46} 48,530`, DWC.PE, 1);                                       // frame bond
+  }
+  if(nStr>3) g += _t(60,392,'⋮  +'+(nStr-3)+' more identical strings',10,'#8FA6CC');
+
+  /* combiner box */
+  g += `<rect x="185" y="20" width="185" height="360" rx="8" fill="none" stroke="#1C3A6E" stroke-dasharray="5 4"/>` + _t(277,34,'DC COMBINER BOX (IP65)',10,'#00C2D1','middle',1);
+  g += _w('300,150 300,300', DWC.pos, 0, 3) + _t(292,300,'+BUS',8,DWC.pos,'end');
+  g += _w('320,150 320,300', DWC.neg, 0, 3) + _t(330,300,'−BUS',8,DWC.neg);
+  /* SPD */
+  g += _box(230,315,80,42,'SPD T2','40kA 500V');
+  g += _w('300,300 300,315', DWC.pos) + _w('320,300 320,308 305,308 305,315', DWC.neg);
+  g += _w('270,357 270,530', DWC.PE, 1);
+  /* DC isolator + main DC breaker */
+  g += _w('300,300 300,330 340,330', DWC.pos); /* joins bus to output path */
+  g += _brk(356,330,DWC.pos) + _t(356,318,`DC ISO+BRKR ${ccBrk(imp*nStr*1.25)}A`,8,DWC.pos,'middle');
+  g += _w(`368,330 430,330 430,120 470,120`, DWC.pos) + _t(400,112,`PV1-F ${dcTotMM} mm²`,8,DWC.pos);
+  g += _w(`320,300 320,345 415,345 415,140 470,140`, DWC.neg) + _t(400,158,`${iDC} A/str`,8,'#8FA6CC');
+
+  /* inverter */
+  g += _box(470,80,190,230, (t==='grid'?'GRID-TIE INVERTER':'HYBRID INVERTER'), `${c.invPick} kW · 2×MPPT · IP65`);
+  g += _t(478,124,'PV+',9,DWC.pos) + _t(478,144,'PV−',9,DWC.neg);
+  g += _t(478,225,'BAT+',9,DWC.pos) + _t(478,245,'BAT−',9,DWC.neg);
+  g += _t(652,124,'GRID L',9,DWC.L,'end') + _t(652,140,'N',9,DWC.N,'end') + _t(652,156,'PE',9,DWC.PE,'end');
+  g += _t(652,225,'LOAD L',9,DWC.L,'end') + _t(652,241,'N',9,DWC.N,'end');
+  g += _w('565,310 565,530', DWC.PE, 1);
+
+  /* battery */
+  if(t!=='grid'){
+    g += _box(470,420,190,80,'BATTERY BANK', `${c.battUnits} × ${el('dsBattKwh').value} kWh LiFePO4 51.2V`);
+    g += _batt(540,470);
+    g += _w('510,420 510,255 470,255', DWC.pos);
+    g += _fuse(510,392,DWC.pos) + _t(524,388,'CLASS-T '+ccBrk(c.invPick*1000/51.2*1.25)+'A',8,DWC.pos);
+    g += _brk(510,360,DWC.pos);
+    g += _w('540,420 540,270 470,270', DWC.neg);
+    g += _t(478,262,'',(8),DWC.pos);
+  }
+
+  /* AC grid side */
+  if(t!=='off'){
+    g += _w('660,118 730,118 730,70 790,70', DWC.L) + _w('660,134 745,134 745,86 790,86', DWC.N);
+    g += _brk(768,70,DWC.L) + _t(768,58,`AC ISO ${ccBrk(c.invPick*1000/230*1.25)}A`,8,DWC.L,'middle');
+    g += _box(790,40,170,75,'kWh NET METER','bi-directional · RA 9513');
+    g += _w('875,40 875,20', DWC.L) + `<polygon points="870,20 880,20 875,8" fill="${DWC.L}"/>` + _t(890,18,'UTILITY GRID 230V 1Ø',9,DWC.L);
+    g += _t(730,110,`THHN ${acMM} mm²`,8,DWC.L);
+  }
+  /* AC load side / distribution panel */
+  g += _w('660,219 730,219 730,190 790,190', DWC.L) + _w('660,235 745,235 745,206 790,206', DWC.N);
+  g += _box(790,150,170,210,'DISTRIBUTION PANEL', `main RCBO ${ccBrk(c.invPick*1000/230*1.25)}A 30mA`);
+  g += _brk(825,215,DWC.L);
+  const brs = [['LIGHTING','16A'],['OUTLETS','20A'],['AIRCON','32A']];
+  brs.forEach((b,i)=>{ const y=255+i*32; g += _brk(840,y,DWC.L) + _w(`852,${y} 940,${y}`, DWC.L) + _t(944,y+3,b[0]+' '+b[1],8,'#8FA6CC'); g += _w(`820,215 820,${y} 832,${y}`, DWC.L,0,1.5); });
+  g += _w('900,360 900,530', DWC.PE, 1) + _t(905,375,'DP earth bar',8,DWC.PE);
+  g += _t(875,140,`${iAC} A design`,8,'#8FA6CC','middle');
+
+  /* legend */
+  g += `<rect x="30" y="430" width="200" height="86" rx="6" fill="#0B1F3A" stroke="#1C3A6E"/>` + _t(40,446,'LEGEND',9,'#00C2D1','start',1);
+  const leg = [[DWC.pos,'DC positive'],[DWC.neg,'DC negative'],[DWC.L,'AC Line'],[DWC.N,'AC Neutral'],[DWC.PE,'PE / earth (dashed)']];
+  leg.forEach((L,i)=>{ const y=458+i*11; g += _w(`40,${y} 62,${y}`, L[0], L[0]===DWC.PE?1:0) + _t(68,y+3,L[1],8,'#8FA6CC'); });
+
+  g += `</svg>`;
+  el('ccSLDWrap').innerHTML = g;
+}
+
+/* ---------- projects: full lifecycle ---------- */
+const PR_TASKS = ['Site survey & roof assessment','Load audit confirmed with client','System design & SLD approved','Proposal / BOQ sent','Contract signed · downpayment received','Permits & net-metering application filed','Materials staged per BOQ','Mounting & panels installed','Wiring, protection & inverter terminated','Testing & commissioning report','Handover docs, warranty & O&M briefing'];
+function prEnsureTasks(p){ if(!p.tasks) p.tasks = PR_TASKS.map(t=>({t,done:false})); return p; }
+
+prRender = function(){
+  el('prKanban').innerHTML = STAGES.map(st=>{
+    const cards = DB.projects.filter(p=>p.stage===st);
+    return `<div class="kcol"><h4>${st}<span>${cards.length}</span></h4>` + cards.map(p=>
+      `<div class="kcard" onclick="prDetail('${p.id}')"><div class="nm">${esc(p.name)}</div><div class="mt">${p.kwp||'?'} kWp · ${peso(p.value)}</div><div class="mt">${esc(p.client||'')}</div></div>`).join('') + `</div>`;
+  }).join('');
+  const q = (el('prSearch')?.value||'').toLowerCase();
+  el('prTable').querySelector('tbody').innerHTML = DB.projects
+    .filter(p=>!q || `${p.name} ${p.client} ${p.stage}`.toLowerCase().includes(q))
+    .map(p=>{
+      prEnsureTasks(p);
+      const done = p.tasks.filter(x=>x.done).length, pct = Math.round(100*done/p.tasks.length);
+      return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.client||'—')}</td><td class="mono">${p.kwp||'—'}</td><td class="mono">${Number(p.value).toLocaleString()}</td>
+      <td><span class="tag cyan">${p.stage}</span></td>
+      <td style="min-width:110px"><div class="progress"><i style="width:${pct}%"></i></div><span class="mono" style="font-size:10px;color:var(--dim)">${done}/${p.tasks.length}</span></td>
+      <td style="white-space:nowrap"><button class="btn sm ghost" onclick="prDetail('${p.id}')">Open</button> <button class="btn sm ghost" onclick="prOpenEdit('${p.id}')">✎</button> <button class="btn sm ghost" onclick="prDelete('${p.id}')">✕</button></td></tr>`;
+    }).join('') || '<tr><td colspan="7" style="color:var(--mute)">No projects yet — create one or convert a design from the Design Studio.</td></tr>';
+};
+function prOpenEdit(id){ const p = DB.projects.find(x=>x.id===id); if(p) prForm(p); }
+prOpen = prDetail; // kanban cards open the detail view
+function prDetail(id){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return; prEnsureTasks(p);
+  const si = STAGES.indexOf(p.stage), pct = Math.round(100*si/(STAGES.length-1));
+  modal(`<h3>${esc(p.name)}</h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+    <span class="tag cyan">${p.stage}</span><span class="tag yel">${p.kwp||'?'} kWp</span>
+    <span class="tag dim">${{grid:'Grid-tie',hybrid:'Hybrid',off:'Off-grid'}[p.type]||p.type}</span>
+    <span class="tag ok">${peso(p.value)}</span>
+  </div>
+  <div style="font-size:12px;color:var(--dim)">${esc(p.client||'—')}${p.phone?' · +'+esc(p.phone):''} · created ${String(p.created).slice(0,10)}</div>
+  <label>Stage progress</label>
+  <div class="progress"><i style="width:${pct}%"></i></div>
+  <div class="toolRow" style="margin-top:8px">
+    <button class="btn sm ghost" ${si<=0?'disabled':''} onclick="prStage('${p.id}',-1)">◀ ${STAGES[si-1]||''}</button>
+    <span style="flex:1"></span>
+    <button class="btn sm y" ${si>=STAGES.length-1?'disabled':''} onclick="prStage('${p.id}',1)">${STAGES[si+1]||'Done'} ▶</button>
+  </div>
+  <label>Checklist — ${p.tasks.filter(x=>x.done).length}/${p.tasks.length} done</label>
+  <div style="max-height:200px;overflow-y:auto">${p.tasks.map((tk,i)=>
+    `<label class="switch" style="display:flex;padding:4px 0;border-bottom:1px solid rgba(28,58,110,.4)"><input type="checkbox" ${tk.done?'checked':''} onchange="prTaskToggle('${p.id}',${i})"><span style="${tk.done?'text-decoration:line-through;opacity:.55':''}">${esc(tk.t)}</span></label>`).join('')}</div>
+  <div class="toolRow" style="margin-top:6px"><input id="prNewTask" placeholder="Add task…"><button class="btn sm ghost" onclick="prTaskAdd('${p.id}')">+ Add</button></div>
+  ${p.notes?`<label>Notes</label><div style="font-size:12px;color:var(--dim);white-space:pre-wrap">${esc(p.notes)}</div>`:''}
+  <div class="modalBtns">
+    <button class="btn danger sm" onclick="prDelete('${p.id}')">Delete</button>
+    ${p.phone?`<button class="btn ghost sm" onclick="prNotify('${p.id}')">Notify client</button>`:''}
+    <button class="btn ghost sm" onclick="prOpenEdit('${p.id}')">Update details</button>
+    <button class="btn sm" onclick="modalClose()">Close</button>
+  </div>`);
+}
+function prStage(id, dir){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return;
+  const si = Math.min(STAGES.length-1, Math.max(0, STAGES.indexOf(p.stage)+dir));
+  p.stage = STAGES[si]; queue('projects','stage_changed',p); save(); prRender(); prDetail(id);
+  toast('Stage → '+p.stage);
+}
+function prTaskToggle(id,i){ const p = DB.projects.find(x=>x.id===id); if(!p) return; p.tasks[i].done = !p.tasks[i].done; queue('projects','upsert',p); save(); prRender(); prDetail(id); }
+function prTaskAdd(id){ const p = DB.projects.find(x=>x.id===id); const v = el('prNewTask').value.trim(); if(!p||!v) return; p.tasks.push({t:v,done:false}); queue('projects','upsert',p); save(); prDetail(id); }
+function prDelete(id){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return;
+  if(!confirm('Delete project "'+p.name+'"? This also removes it from Google Sheets on next sync.')) return;
+  DB.projects = DB.projects.filter(x=>x.id!==id); queue('projects','delete',{id}); save(); modalClose(); prRender(); toast('Project deleted');
+}
+prDel = function(id){ prDelete(id); }; // edit-form delete now confirms too
+
+/* ---------- saved designs: open/delete ---------- */
+dsLoadSaved = function(){
+  if(!DB.designs.length){ toast('No saved designs yet','warn'); return; }
+  modal('<h3>Saved designs</h3>' + DB.designs.slice().reverse().map(d=>
+    `<div class="kcard" style="display:flex;align-items:center;gap:8px"><div style="flex:1" onclick="dsOpen('${d.id}')"><div class="nm">${esc(d.client)}</div><div class="mt">${String(d.t).slice(0,10)} · ${d.calc? d.calc.arrKw.toFixed(1)+' kWp':''} · ${esc(d.loc||'')}</div></div><button class="btn sm ghost" onclick="dsDelDesign('${d.id}')">✕</button></div>`).join('') +
+    '<div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Close</button></div>');
+};
+function dsDelDesign(id){
+  const d = DB.designs.find(x=>x.id===id); if(!d) return;
+  if(!confirm('Delete design for "'+d.client+'"?')) return;
+  DB.designs = DB.designs.filter(x=>x.id!==id); queue('designs','delete',{id}); save(); modalClose(); toast('Design deleted');
+}
+
+/* ---------- saved BOQs: open/delete ---------- */
+function ccBoqOpenSaved(){
+  if(!DB.boqs.length) return toast('No saved BOQs yet','warn');
+  modal('<h3>Saved BOQs</h3>' + DB.boqs.slice().reverse().map(b=>
+    `<div class="kcard" style="display:flex;align-items:center;gap:8px"><div style="flex:1" onclick="ccBoqLoad('${b.id}')"><div class="nm">${esc(b.client)} — ${peso(b.total)}</div><div class="mt">${String(b.t).slice(0,10)} · ${b.rows.length} items · ${(+b.kwp||0).toFixed(1)} kWp</div></div><button class="btn sm ghost" onclick="ccBoqDel('${b.id}')">✕</button></div>`).join('') +
+    '<div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Close</button></div>');
+}
+function ccBoqLoad(id){ const b = DB.boqs.find(x=>x.id===id); if(!b) return; CC.boq = JSON.parse(JSON.stringify(b.rows)); CC.boqClient = b.client; ccBoqRender(); modalClose(); toast('BOQ loaded — '+b.client); }
+function ccBoqDel(id){ if(!confirm('Delete this saved BOQ?')) return; DB.boqs = DB.boqs.filter(x=>x.id!==id); queue('boqs','delete',{id}); save(); modalClose(); toast('BOQ deleted'); }
+
+</script>
+
+<!-- ======================= Code.gs (backend, copy into Apps Script) ======================= -->
+<script type="text/plain" id="gasSrc">
+/*******************************************************
+ * NEXSOLAR backend — Google Apps Script (Code.gs)
+ * NEXARCH Systems Engineering · CYRABELL stack
+ * Deploy: Extensions → Apps Script → paste → Deploy →
+ * New deployment → Web app → Execute as: Me,
+ * Who has access: Anyone with the link. Copy the /exec URL
+ * into NEXSOLAR → Settings → Apps Script Web App URL.
+ *******************************************************/
+const SHEETS = ['inventory','projects','sales','designs','moves','notifLog','api_log'];
+
+function ss(){ return SpreadsheetApp.getActiveSpreadsheet(); }
+function sheet(name){
+  let sh = ss().getSheetByName(name);
+  if(!sh){ sh = ss().insertSheet(name); sh.appendRow(['id','json','updated']); }
+  return sh;
+}
+function upsert(table, row){
+  const sh = sheet(table);
+  const data = sh.getDataRange().getValues();
+  const id = String(row.id || row.or || row.sku || Utilities.getUuid());
+  for(let i=1;i<data.length;i++){
+    if(String(data[i][0])===id){ sh.getRange(i+1,2,1,2).setValues([[JSON.stringify(row), new Date()]]); return; }
+  }
+  sh.appendRow([id, JSON.stringify(row), new Date()]);
+}
+function removeRow(table, id){
+  const sh = sheet(table); const data = sh.getDataRange().getValues();
+  for(let i=1;i<data.length;i++) if(String(data[i][0])===String(id)){ sh.deleteRow(i+1); return; }
+}
+function readAll(table){
+  const sh = sheet(table); const data = sh.getDataRange().getValues(); const out=[];
+  for(let i=1;i<data.length;i++){ try{ out.push(JSON.parse(data[i][1])); }catch(e){} }
+  return out;
+}
+function apiKeyOK(key){
+  const stored = PropertiesService.getScriptProperties().getProperty('API_KEY');
+  if(!stored){ PropertiesService.getScriptProperties().setProperty('API_KEY', key||'SET_ME'); return true; } // first call binds the key
+  return stored === key;
+}
+function json(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+
+function doGet(e){
+  const p = e.parameter || {};
+  if(!apiKeyOK(p.key)) return json({ok:false, err:'bad key'});
+  if(p.api && SHEETS.indexOf(p.api)>-1) return json({ok:true, table:p.api, rows:readAll(p.api)});
+  return json({ok:true, service:'NEXSOLAR backend', tables:SHEETS});
+}
+
+function doPost(e){
+  let p = {};
+  try{ p = JSON.parse((e.parameter && e.parameter.payload) || e.postData.contents); }catch(err){ return json({ok:false, err:'bad payload'}); }
+  if(!apiKeyOK(p.key)) return json({ok:false, err:'bad key'});
+
+  if(p.action==='sync'){
+    (p.batch||[]).forEach(function(q){
+      const map = {inventory:'inventory', projects:'projects', sales:'sales', designs:'designs'};
+      const tbl = map[q.table] || q.table;
+      if(q.action==='delete') removeRow(tbl, q.row.id);
+      else upsert(tbl, q.row);
+    });
+    return json({ok:true, n:(p.batch||[]).length});
+  }
+
+  if(p.action==='upsert'){ upsert(p.table, p.row); return json({ok:true}); }
+
+  if(p.action==='notify'){
+    if(p.channel==='email'){
+      MailApp.sendEmail({to:p.to, subject:p.subject||'NEXSOLAR', body:p.message});
+      upsert('notifLog', {id:Utilities.getUuid(), ch:'email', to:p.to, t:new Date().toISOString()});
+      return json({ok:true});
+    }
+    if(p.channel==='sms'){
+      const key = p.semKey || PropertiesService.getScriptProperties().getProperty('SEMAPHORE_KEY');
+      if(!key) return json({ok:false, err:'no Semaphore key'});
+      const res = UrlFetchApp.fetch('https://api.semaphore.co/api/v4/messages', {
+        method:'post', payload:{apikey:key, number:p.to, message:p.message, sendername:p.semSender||'NEXSOLAR'}, muteHttpExceptions:true
+      });
+      upsert('notifLog', {id:Utilities.getUuid(), ch:'sms', to:p.to, t:new Date().toISOString(), code:res.getResponseCode()});
+      return json({ok:res.getResponseCode()<300});
+    }
+  }
+  return json({ok:false, err:'unknown action'});
+}
+</script>
+</body>
+</html>
