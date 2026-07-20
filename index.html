@@ -162,6 +162,15 @@ pre.codeBox{background:#07142c;border:1px solid var(--line);border-radius:var(--
 .wire.dead{stroke:#233; opacity:.5}
 @keyframes wflow{to{stroke-dashoffset:-13}}
 @media (prefers-reduced-motion: reduce){.wire.on{animation:none}}
+
+/* P&ID canvas */
+#pidSvg{display:block;min-width:900px;touch-action:none;user-select:none}
+.pidNode rect{fill:#0E2650;stroke:#1C3A6E;rx:7}
+.pidNode.sel rect{stroke:var(--yellow);stroke-width:2}
+.pidNode text{pointer-events:none}
+.pidWire{fill:none;stroke-width:2.5;cursor:pointer}
+.pidWire.sel{stroke-dasharray:5 4;stroke-width:3.5}
+.pidGrid{fill:#12305f}
 @media print{
   body{overflow:visible;background:#fff;color:#111}
   #topbar,#sidenav,#bottomnav,.noPrint{display:none!important}
@@ -315,6 +324,29 @@ pre.codeBox{background:#07142c;border:1px solid var(--line);border-radius:var(--
           </div>
           <div class="grid4" id="ccGauges"></div>
           <div id="ccAlarms" style="margin-top:8px"></div>
+        </div>
+        <div class="card" id="ccPidCard">
+          <h3>⬡ P&ID Canvas — drag · wire · edit <span class="tag dim" id="pidTag">blank sheet</span></h3>
+          <div class="toolRow noPrint">
+            <select id="pidPalette" style="max-width:170px"></select>
+            <button class="btn sm" onclick="pidAdd()">+ Add</button>
+            <button class="btn sm ghost" onclick="pidAutoGen()">⟳ Auto-generate from design</button>
+            <button class="btn sm ghost" onclick="pidClear()">Clear</button>
+          </div>
+          <div class="toolRow noPrint">
+            <button class="btn sm" id="pidModeMove" onclick="pidMode('move')">✥ Move</button>
+            <button class="btn sm ghost" id="pidModeWire" onclick="pidMode('wire')">↝ Wire</button>
+            <select id="pidWireKind" style="max-width:110px"><option value="dcp">DC +</option><option value="dcn">DC −</option><option value="ac">AC</option><option value="pe">PE ⏚</option></select>
+            <button class="btn sm ghost" onclick="pidRename()">✎ Rename</button>
+            <button class="btn sm ghost" onclick="pidDelete()">✕ Delete</button>
+            <button class="btn sm ghost" onclick="pidCheck()">✓ Check design</button>
+          </div>
+          <div id="pidWrap" style="overflow:auto;background:#07142c;border:1px solid var(--line);border-radius:var(--r-sm)"></div>
+          <div id="pidFindings" style="margin-top:8px"></div>
+          <div class="toolRow noPrint" style="margin-top:8px">
+            <button class="btn sm" onclick="pidSaveToProject()">Save P&ID to project…</button>
+            <span style="font-size:11px;color:var(--mute)">Move mode: drag blocks. Wire mode: tap source block, then target block. Tap a wire or block to select it.</span>
+          </div>
         </div>
         <div class="grid2 tight">
           <div class="card"><h3>▤ Wire & protection sizing</h3><div class="tableWrap"><table id="ccWires"><thead><tr><th>Segment</th><th>I design (A)</th><th>Cable</th><th>V-drop</th><th>Protection</th></tr></thead><tbody></tbody></table></div>
@@ -1849,6 +1881,428 @@ function ccBoqOpenSaved(){
 }
 function ccBoqLoad(id){ const b = DB.boqs.find(x=>x.id===id); if(!b) return; CC.boq = JSON.parse(JSON.stringify(b.rows)); CC.boqClient = b.client; ccBoqRender(); modalClose(); toast('BOQ loaded — '+b.client); }
 function ccBoqDel(id){ if(!confirm('Delete this saved BOQ?')) return; DB.boqs = DB.boqs.filter(x=>x.id!==id); queue('boqs','delete',{id}); save(); modalClose(); toast('BOQ deleted'); }
+
+
+/* =========================================================
+   v1.3 — ctx-based diagram generators (reusable per project)
+   ========================================================= */
+function ccCtx(){ return { calc:CC.c||DS.calc, pW:+el('dsPanelW').value||580, voc:+el('dsVoc').value||51.5, maxV:+el('dsMaxV').value||600, battKwh:+el('dsBattKwh').value||5.12, eff:+el('dsEff').value||0.8 }; }
+function ctxPerString(ctx){ return Math.max(1, Math.floor(ctx.maxV/(ctx.voc*1.25))); }
+function synthEcalc(p){
+  const pW=580, voc=51.5, maxV=600, battKwh=5.12, psh=4.8, eff=0.8;
+  const kwp = +p.kwp||3, type = p.type||'grid';
+  const daily = kwp*psh*eff, nPanels = Math.max(1,Math.ceil(kwp*1000/pW));
+  const bank = type!=='grid' ? daily/(0.9*0.95) : 0;
+  return { calc:{ arrKw:kwp, nPanels, invPick:Math.max(1,Math.ceil(kwp)), battUnits:type!=='grid'?Math.max(1,Math.ceil(bank/battKwh)):0, bankKwh:bank, peak:Math.round(kwp*800), daily, type, psh }, pW, voc, maxV, battKwh, eff };
+}
+
+function svgSLD(ctx){
+  const c = ctx.calc, t = c.type;
+  const perStr = Math.min(ctxPerString(ctx), c.nPanels);
+  const nStr = Math.ceil(c.nPanels/perStr);
+  const B = (id,x,y,w,h,l1,l2) => `<rect id="${id}" class="sldBox" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
+    <text class="sldTxt" x="${x+w/2}" y="${y+h/2-3}" text-anchor="middle">${l1}</text>
+    <text class="sldSub" x="${x+w/2}" y="${y+h/2+11}" text-anchor="middle">${l2}</text>`;
+  let s = `<svg id="ccSLD" viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<path id="wPV" class="wire" d="M142,105 L205,105"/>`;
+  s += `<path id="wDC" class="wire" d="M300,105 L345,105"/>`;
+  if(t!=='grid') s += `<path id="wBatt" class="wire" d="M410,148 L410,185"/>`;
+  s += `<path id="wAC" class="wire" d="M475,105 L515,105"/>`;
+  if(t!=='off') s += `<path id="wGrid" class="wire" d="M590,105 L625,105 L625,72"/>`;
+  s += `<path id="wLoad" class="wire" d="M590,105 L648,105 L648,158"/>`;
+  s += B('bPV', 22,65,120,80, `PV ARRAY ${c.arrKw.toFixed(1)}kWp`, `${nStr}S × ${perStr}P · ${c.nPanels}×${ctx.pW}W`);
+  s += B('bDC', 205,80,95,50, 'DC COMBINER', 'brkr + SPD II');
+  s += B('bInv',345,65,130,83, (t==='grid'?'GRID-TIE INV':'HYBRID INV'), `${c.invPick} kW · MPPT`);
+  if(t!=='grid') s += B('bBatt',352,185,116,48, 'BATTERY BANK', `${c.battUnits}× · ${c.bankKwh.toFixed(1)} kWh`);
+  s += B('bBrk',515,85,75,40, 'AC BRKR', 'RCBO');
+  if(t!=='off') s += B('bGrid',585,25,110,47, 'NET METER · GRID', 'RA 9513 export');
+  s += B('bLoad',608,158,88,47, 'LOADS', `${(c.peak/1000).toFixed(1)} kW peak`);
+  return s + `</svg>`;
+}
+function ccBuildSLD(){ if(!CC.c) return; el('ccSLDWrap').innerHTML = svgSLD(ccCtx()); }
+
+function svgDetail(ctx){
+  const c = ctx.calc, t = c.type, pW = ctx.pW, voc = ctx.voc;
+  const perStr = Math.min(ctxPerString(ctx), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  const imp = pW/(voc*0.82), iDC=(imp*1.25).toFixed(1), iAC=(c.invPick*1000/230*1.25).toFixed(1);
+  const dcTotMM = ccPick(imp*nStr*1.25), acMM = ccPick(c.invPick*1000/230*1.25);
+  const shown = Math.min(nStr,3);
+  let g = `<svg id="ccSLD" viewBox="0 0 1000 570" xmlns="http://www.w3.org/2000/svg" style="min-width:960px;display:block">`;
+  g += _w('60,530 940,530', DWC.PE, 1) + _t(500,545,'PROTECTIVE EARTH (PE) BUS — BC 16 mm² · ground resistance ≤ 5 Ω',9,DWC.PE,'middle');
+  g += _gnd(110,530) + _t(110,522,'ROD 5/8″×10′',8,DWC.PE,'middle');
+  for(let i=0;i<shown;i++){
+    const y = 45 + i*110;
+    g += _panel(30,y) + _panel(72,y);
+    g += _t(114,y+22,'⋯ ×'+perStr,10,'#8FA6CC');
+    g += _t(30,y-6,`STRING ${i+1} — ${perStr} × ${pW}W series · ${(voc*0.82*perStr).toFixed(0)}Vmp / ${imp.toFixed(1)}A`,9,'#EAF2FF');
+    g += _w(`106,${y+10} 150,${y+10} 150,${y+18} 210,${y+18}`, DWC.pos);
+    g += _fuse(222,y+18,DWC.pos) + _t(222,y+6,`${Math.ceil(imp*1.25/5)*5}A gPV`,8,DWC.pos,'middle');
+    g += _w(`234,${y+18} 300,${y+18} 300,150`, DWC.pos);
+    g += _w(`106,${y+38} 320,${y+38} 320,150`, DWC.neg);
+    g += _w(`48,${y+46} 48,530`, DWC.PE, 1);
+  }
+  if(nStr>3) g += _t(60,392,'⋮  +'+(nStr-3)+' more identical strings',10,'#8FA6CC');
+  g += `<rect x="185" y="20" width="185" height="360" rx="8" fill="none" stroke="#1C3A6E" stroke-dasharray="5 4"/>` + _t(277,34,'DC COMBINER BOX (IP65)',10,'#00C2D1','middle',1);
+  g += _w('300,150 300,300', DWC.pos, 0, 3) + _t(292,300,'+BUS',8,DWC.pos,'end');
+  g += _w('320,150 320,300', DWC.neg, 0, 3) + _t(330,300,'−BUS',8,DWC.neg);
+  g += _box(230,315,80,42,'SPD T2','40kA 500V');
+  g += _w('300,300 300,315', DWC.pos) + _w('320,300 320,308 305,308 305,315', DWC.neg);
+  g += _w('270,357 270,530', DWC.PE, 1);
+  g += _w('300,300 300,330 340,330', DWC.pos);
+  g += _brk(356,330,DWC.pos) + _t(356,318,`DC ISO+BRKR ${ccBrk(imp*nStr*1.25)}A`,8,DWC.pos,'middle');
+  g += _w(`368,330 430,330 430,120 470,120`, DWC.pos) + _t(400,112,`PV1-F ${dcTotMM} mm²`,8,DWC.pos);
+  g += _w(`320,300 320,345 415,345 415,140 470,140`, DWC.neg) + _t(400,158,`${iDC} A/str`,8,'#8FA6CC');
+  g += _box(470,80,190,230, (t==='grid'?'GRID-TIE INVERTER':'HYBRID INVERTER'), `${c.invPick} kW · 2×MPPT · IP65`);
+  g += _t(478,124,'PV+',9,DWC.pos) + _t(478,144,'PV−',9,DWC.neg);
+  g += _t(478,225,'BAT+',9,DWC.pos) + _t(478,245,'BAT−',9,DWC.neg);
+  g += _t(652,124,'GRID L',9,DWC.L,'end') + _t(652,140,'N',9,DWC.N,'end') + _t(652,156,'PE',9,DWC.PE,'end');
+  g += _t(652,225,'LOAD L',9,DWC.L,'end') + _t(652,241,'N',9,DWC.N,'end');
+  g += _w('565,310 565,530', DWC.PE, 1);
+  if(t!=='grid'){
+    g += _box(470,420,190,80,'BATTERY BANK', `${c.battUnits} × ${ctx.battKwh} kWh LiFePO4 51.2V`);
+    g += _batt(540,470);
+    g += _w('510,420 510,255 470,255', DWC.pos);
+    g += _fuse(510,392,DWC.pos) + _t(524,388,'CLASS-T '+ccBrk(c.invPick*1000/51.2*1.25)+'A',8,DWC.pos);
+    g += _brk(510,360,DWC.pos);
+    g += _w('540,420 540,270 470,270', DWC.neg);
+  }
+  if(t!=='off'){
+    g += _w('660,118 730,118 730,70 790,70', DWC.L) + _w('660,134 745,134 745,86 790,86', DWC.N);
+    g += _brk(768,70,DWC.L) + _t(768,58,`AC ISO ${ccBrk(c.invPick*1000/230*1.25)}A`,8,DWC.L,'middle');
+    g += _box(790,40,170,75,'kWh NET METER','bi-directional · RA 9513');
+    g += _w('875,40 875,20', DWC.L) + `<polygon points="870,20 880,20 875,8" fill="${DWC.L}"/>` + _t(890,18,'UTILITY GRID 230V 1Ø',9,DWC.L);
+    g += _t(730,110,`THHN ${acMM} mm²`,8,DWC.L);
+  }
+  g += _w('660,219 730,219 730,190 790,190', DWC.L) + _w('660,235 745,235 745,206 790,206', DWC.N);
+  g += _box(790,150,170,210,'DISTRIBUTION PANEL', `main RCBO ${ccBrk(c.invPick*1000/230*1.25)}A 30mA`);
+  g += _brk(825,215,DWC.L);
+  [['LIGHTING','16A'],['OUTLETS','20A'],['AIRCON','32A']].forEach((b,i)=>{ const y=255+i*32; g += _brk(840,y,DWC.L) + _w(`852,${y} 940,${y}`, DWC.L) + _t(944,y+3,b[0]+' '+b[1],8,'#8FA6CC'); g += _w(`820,215 820,${y} 832,${y}`, DWC.L,0,1.5); });
+  g += _w('900,360 900,530', DWC.PE, 1) + _t(905,375,'DP earth bar',8,DWC.PE);
+  g += _t(875,140,`${iAC} A design`,8,'#8FA6CC','middle');
+  g += `<rect x="30" y="430" width="200" height="86" rx="6" fill="#0B1F3A" stroke="#1C3A6E"/>` + _t(40,446,'LEGEND',9,'#00C2D1','start',1);
+  [[DWC.pos,'DC positive'],[DWC.neg,'DC negative'],[DWC.L,'AC Line'],[DWC.N,'AC Neutral'],[DWC.PE,'PE / earth (dashed)']].forEach((L,i)=>{ const y=458+i*11; g += _w(`40,${y} 62,${y}`, L[0], L[0]===DWC.PE?1:0) + _t(68,y+3,L[1],8,'#8FA6CC'); });
+  return g + `</svg>`;
+}
+function ccBuildDetail(){ if(!CC.c) return; el('ccSLDWrap').innerHTML = svgDetail(ccCtx()); }
+
+/* ---------- every project carries its diagrams ---------- */
+function prDiagCtx(p){ return (p.ecalc && p.ecalc.calc) ? p.ecalc : synthEcalc(p); }
+function dsToProject(){
+  if(!DS.calc || !el('dsClient').value.trim()){ toast('Complete the design first','warn'); return; }
+  const ctx = ccCtx();
+  const p = {id:uid('P'), name:`${el('dsClient').value} — ${DS.calc.arrKw.toFixed(1)}kWp`, client:el('dsClient').value, phone:'', kwp:+DS.calc.arrKw.toFixed(1), value:Math.round(DS.calc.sysCost), stage:'Design', type:DS.calc.type, created:nowISO(), notes:'From Design Studio', ecalc:{calc:{...DS.calc}, pW:ctx.pW, voc:ctx.voc, maxV:ctx.maxV, battKwh:ctx.battKwh, eff:ctx.eff}};
+  DB.projects.push(p); queue('projects','upsert',p); save(); toast('Project created with SLD + wiring diagrams'); go('projects');
+}
+function prSave(id){
+  const rec = { name:el('pfName').value, client:el('pfClient').value, phone:el('pfPhone').value.replace(/\D/g,''), kwp:+el('pfKwp').value||0, value:+el('pfVal').value||0, stage:el('pfStage').value, type:el('pfType').value, notes:el('pfNotes').value };
+  if(!rec.name){ toast('Name is required','warn'); return; }
+  if(id){
+    const p = DB.projects.find(x=>x.id===id);
+    const stageChanged = p.stage!==rec.stage, sysChanged = p.kwp!==rec.kwp || p.type!==rec.type;
+    Object.assign(p,rec);
+    if(sysChanged && (!p.ecalc || p.ecalc.synth)) { p.ecalc = synthEcalc(p); p.ecalc.synth = true; }
+    queue('projects', stageChanged?'stage_changed':'upsert', p);
+  } else {
+    const p = {id:uid('P'), created:nowISO(), ...rec};
+    p.ecalc = synthEcalc(p); p.ecalc.synth = true;
+    DB.projects.push(p); queue('projects','upsert',p);
+  }
+  save(); modalClose(); prRender(); toast('Project saved — diagrams attached');
+}
+function prDiagrams(id, view){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return;
+  view = view || 'sld';
+  const ctx = prDiagCtx(p);
+  modal(`<h3>⚡ ${esc(p.name)} — electrical diagrams</h3>
+  <div style="font-size:11px;color:var(--dim);margin-bottom:8px">${ctx.synth?'Estimated from project kWp/type — open in Design Studio for exact sizing.':'From saved Design Studio sizing.'}</div>
+  <div class="toolRow">
+    <button class="btn sm ${view==='sld'?'':'ghost'}" onclick="prDiagrams('${id}','sld')">Single-line</button>
+    <button class="btn sm ${view==='detail'?'':'ghost'}" onclick="prDiagrams('${id}','detail')">Detailed wiring</button>
+    <button class="btn sm ghost" onclick="prDiagPrint('${id}','${view}')">🖶 Print</button>
+  </div>
+  <div style="overflow-x:auto;background:#07142c;border:1px solid var(--line);border-radius:8px">${view==='sld'? svgSLD(ctx) : svgDetail(ctx)}</div>
+  <div class="modalBtns"><button class="btn ghost sm" onclick="prDetail('${id}')">← Back to project</button><button class="btn sm" onclick="modalClose()">Close</button></div>`);
+}
+function prDiagPrint(id, view){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return;
+  const ctx = prDiagCtx(p);
+  const svg = view==='sld'? svgSLD(ctx) : svgDetail(ctx);
+  const w = window.open('','_blank');
+  w.document.write('<html><head><title>'+esc(p.name)+' — '+(view==='detail'?'Detailed Wiring':'Single-Line')+'</title>'+
+  '<style>body{font-family:Inter,Arial;margin:16px}h1{font-family:"Chakra Petch",sans-serif;color:#0A1F44;font-size:19px}h1 b{color:#C79100}'+
+  '.bar{height:5px;background:linear-gradient(90deg,#FFD60A,#00B8D9);border-radius:3px;margin:6px 0 12px}.dwrap{background:#07142c;border-radius:8px;padding:10px}svg{width:100%;height:auto}.ft{margin-top:14px;font-size:11px;color:#556}</style></head><body>'+
+  '<h1>NEX<b>SOLAR</b> — '+(view==='detail'?'Detailed Wiring Diagram':'Single-Line Diagram')+'</h1><div class="bar"></div>'+
+  '<div style="font-size:12px;margin-bottom:8px"><b>Project:</b> '+esc(p.name)+' &nbsp; <b>Client:</b> '+esc(p.client||'—')+' &nbsp; <b>Stage:</b> '+esc(p.stage)+' &nbsp; <b>Date:</b> '+new Date().toLocaleDateString('en-PH')+'</div>'+
+  '<div class="dwrap">'+svg+'</div>'+
+  '<div class="ft">'+esc(DB.settings.company)+' · '+esc(DB.settings.contact)+' · Precision · Scale · Control — Verify against PEC 2017 & utility requirements.</div>'+
+  '<script>print()<\/script></body></html>');
+  w.document.close();
+}
+
+/* =========================================================
+   v1.3 — P&ID editor: palette · drag · wire · check · save
+   ========================================================= */
+const PID_TYPES = {
+  pv:      ['PV STRING',    92, 46, '#00C2D1'],
+  comb:    ['DC COMBINER',  100, 44, '#00C2D1'],
+  fuse:    ['STRING FUSE',  90, 36, '#FF6B6B'],
+  dcbrk:   ['DC BREAKER',   92, 36, '#FF6B6B'],
+  spd:     ['SPD T2',       74, 36, '#FFB020'],
+  inv:     ['INVERTER',     110, 56, '#FFD60A'],
+  batt:    ['BATTERY BANK', 104, 46, '#2FD672'],
+  bms:     ['BMS',          64, 34, '#2FD672'],
+  acbrk:   ['AC RCBO',      84, 36, '#FFB020'],
+  meter:   ['NET METER',    96, 44, '#7FD3FF'],
+  grid:    ['UTILITY GRID', 100, 40, '#7FD3FF'],
+  dp:      ['DIST. PANEL',  100, 46, '#FFB020'],
+  load:    ['LOAD',         76, 40, '#EAF2FF'],
+  genset:  ['GENSET',       84, 40, '#FF9F43'],
+  ats:     ['ATS',          64, 36, '#FF9F43'],
+  gnd:     ['GROUND ⏚',     84, 34, '#2FD672']
+};
+const PID_WIRECOL = { dcp:'#FF6B6B', dcn:'#4DA3FF', ac:'#FFB020', pe:'#2FD672' };
+let PID = { nodes:[], wires:[], sel:null, selWire:null, mode:'move', wireFrom:null, projectId:'', drag:null };
+
+function pidInitPalette(){
+  const sel = el('pidPalette'); if(!sel || sel.options.length) return;
+  sel.innerHTML = Object.entries(PID_TYPES).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('');
+}
+function pidMode(m){
+  PID.mode = m; PID.wireFrom = null;
+  el('pidModeMove').className = 'btn sm ' + (m==='move'?'':'ghost');
+  el('pidModeWire').className = 'btn sm ' + (m==='wire'?'':'ghost');
+  pidRender();
+}
+function pidAdd(){
+  const k = el('pidPalette').value, t = PID_TYPES[k];
+  PID.nodes.push({id:uid('N'), type:k, x:80+Math.random()*160, y:60+Math.random()*120, label:t[0]});
+  pidRender();
+}
+function pidClear(){ if(PID.nodes.length && !confirm('Clear the whole P&ID sheet?')) return; PID = {...PID, nodes:[], wires:[], sel:null, selWire:null, wireFrom:null}; el('pidTag').textContent='blank sheet'; pidRender(); }
+function pidRename(){
+  const n = PID.nodes.find(x=>x.id===PID.sel); if(!n) return toast('Select a block first','warn');
+  const v = prompt('Label for this block:', n.label); if(v===null) return; n.label = v.trim()||n.label; pidRender();
+}
+function pidDelete(){
+  if(PID.selWire){ PID.wires = PID.wires.filter(w=>w.id!==PID.selWire); PID.selWire=null; pidRender(); return; }
+  if(PID.sel){ PID.wires = PID.wires.filter(w=>w.a!==PID.sel && w.b!==PID.sel); PID.nodes = PID.nodes.filter(n=>n.id!==PID.sel); PID.sel=null; pidRender(); return; }
+  toast('Tap a block or wire first','warn');
+}
+function pidNodeC(n){ const t=PID_TYPES[n.type]; return {cx:n.x+t[1]/2, cy:n.y+t[2]/2, w:t[1], h:t[2]}; }
+function pidRoute(a,b){
+  const A=pidNodeC(a), B=pidNodeC(b);
+  const midX = (A.cx+B.cx)/2;
+  return `${A.cx},${A.cy} ${midX},${A.cy} ${midX},${B.cy} ${B.cx},${B.cy}`;
+}
+function pidRender(){
+  pidInitPalette();
+  let g = `<svg id="pidSvg" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">`;
+  for(let x=20;x<1000;x+=40) for(let y=20;y<560;y+=40) g += `<circle class="pidGrid" cx="${x}" cy="${y}" r="1"/>`;
+  PID.wires.forEach(w=>{
+    const a = PID.nodes.find(n=>n.id===w.a), b = PID.nodes.find(n=>n.id===w.b); if(!a||!b) return;
+    g += `<polyline class="pidWire ${PID.selWire===w.id?'sel':''}" data-wire="${w.id}" points="${pidRoute(a,b)}" stroke="${PID_WIRECOL[w.kind]}" ${w.kind==='pe'?'stroke-dasharray="6 4"':''}/>`;
+  });
+  PID.nodes.forEach(n=>{
+    const t = PID_TYPES[n.type];
+    g += `<g class="pidNode ${PID.sel===n.id?'sel':''} ${PID.wireFrom===n.id?'sel':''}" data-node="${n.id}" transform="translate(${n.x},${n.y})">
+      <rect width="${t[1]}" height="${t[2]}" rx="7" stroke="${PID.sel===n.id||PID.wireFrom===n.id?'#FFD60A':t[3]}"/>
+      <text x="${t[1]/2}" y="${t[2]/2+4}" text-anchor="middle" fill="#EAF2FF" font-size="10" font-family="Chakra Petch,sans-serif" font-weight="600">${esc(n.label)}</text></g>`;
+  });
+  g += `</svg>`;
+  el('pidWrap').innerHTML = g;
+  const svg = el('pidSvg');
+  svg.addEventListener('pointerdown', pidDown);
+  svg.addEventListener('pointermove', pidMove);
+  svg.addEventListener('pointerup', pidUp);
+}
+function pidPt(evt){
+  const svg = el('pidSvg'); const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const m = svg.getScreenCTM(); if(!m) return {x:0,y:0};
+  const p = pt.matrixTransform(m.inverse()); return {x:p.x, y:p.y};
+}
+function pidDown(evt){
+  const nodeG = evt.target.closest('[data-node]');
+  const wireEl = evt.target.closest('[data-wire]');
+  if(nodeG){
+    const id = nodeG.getAttribute('data-node');
+    if(PID.mode==='wire'){
+      if(!PID.wireFrom){ PID.wireFrom = id; pidRender(); toast('Now tap the target block'); }
+      else if(PID.wireFrom!==id){
+        PID.wires.push({id:uid('W'), a:PID.wireFrom, b:id, kind:el('pidWireKind').value});
+        PID.wireFrom = null; pidRender();
+      }
+      return;
+    }
+    PID.sel = id; PID.selWire = null;
+    const n = PID.nodes.find(x=>x.id===id); const p = pidPt(evt);
+    PID.drag = {id, dx:p.x-n.x, dy:p.y-n.y};
+    el('pidSvg').setPointerCapture(evt.pointerId);
+    pidRender();
+    return;
+  }
+  if(wireEl){ PID.selWire = wireEl.getAttribute('data-wire'); PID.sel = null; pidRender(); return; }
+  PID.sel = null; PID.selWire = null; PID.wireFrom = null; pidRender();
+}
+function pidMove(evt){
+  if(!PID.drag) return;
+  const n = PID.nodes.find(x=>x.id===PID.drag.id); if(!n) return;
+  const p = pidPt(evt);
+  n.x = Math.max(4, Math.min(900, p.x-PID.drag.dx));
+  n.y = Math.max(4, Math.min(516, p.y-PID.drag.dy));
+  pidRender();
+}
+function pidUp(){ PID.drag = null; }
+
+function pidAutoGen(){
+  const ctx = (CC.c || DS.calc) ? ccCtx() : (DB.designs.length && DB.designs.at(-1).calc ? DB.designs.at(-1) : null);
+  const c = ctx && ctx.calc; 
+  if(!c || !c.nPanels){ toast('Size a system in the Design Studio first','warn'); return; }
+  const t = c.type;
+  const perStr = Math.min(ctxPerString(ctx), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  PID.nodes = []; PID.wires = [];
+  const N = (type,x,y,label)=>{ const n={id:uid('N'),type,x,y,label:label||PID_TYPES[type][0]}; PID.nodes.push(n); return n.id; };
+  const W = (a,b,kind)=>PID.wires.push({id:uid('W'),a,b,kind});
+  const strIds = [];
+  for(let i=0;i<Math.min(nStr,3);i++){
+    const pv = N('pv', 30, 50+i*95, `STRING ${i+1} · ${perStr}×${ctx.pW}W`);
+    const fu = N('fuse', 160, 55+i*95, `gPV ${Math.ceil(ctx.pW/(ctx.voc*0.82)*1.25/5)*5}A`);
+    W(pv,fu,'dcp'); strIds.push(fu);
+  }
+  const comb = N('comb', 290, 120, `COMBINER ${nStr}-STR`);
+  strIds.forEach(f=>W(f,comb,'dcp'));
+  const spd = N('spd', 290, 220); W(comb,spd,'dcp');
+  const dcb = N('dcbrk', 420, 126, `DC BRKR ${ccBrk(ctx.pW/(ctx.voc*0.82)*nStr*1.25)}A`); W(comb,dcb,'dcp');
+  const inv = N('inv', 545, 115, `${t==='grid'?'GT':'HYB'} INV ${c.invPick}kW`); W(dcb,inv,'dcp');
+  if(t!=='grid'){
+    const bms = N('bms', 460, 320); const bat = N('batt', 545, 380, `BATT ${c.battUnits}× ${ctx.battKwh}kWh`);
+    const bbrk = N('dcbrk', 560, 240, `CLASS-T ${ccBrk(c.invPick*1000/51.2*1.25)}A`);
+    W(inv,bbrk,'dcp'); W(bbrk,bat,'dcp'); W(bat,bms,'dcn');
+  }
+  const acb = N('acbrk', 715, 128, `RCBO ${ccBrk(c.invPick*1000/230*1.25)}A`); W(inv,acb,'ac');
+  if(t!=='off'){
+    const met = N('meter', 840, 45); const grd = N('grid', 840, 130);
+    W(acb,met,'ac'); W(met,grd,'ac');
+  }
+  const dp = N('dp', 840, 230); W(acb,dp,'ac');
+  const ld = N('load', 850, 330, `LOADS ${(c.peak/1000).toFixed(1)}kW`); W(dp,ld,'ac');
+  const gn = N('gnd', 300, 470);
+  W(spd,gn,'pe'); W(inv,gn,'pe'); W(dp,gn,'pe');
+  el('pidTag').textContent = `${c.arrKw.toFixed(1)} kWp · ${PID.nodes.length} blocks · ${PID.wires.length} wires`;
+  pidRender(); pidCheck();
+}
+function pidReach(fromTypes, toType){
+  const start = PID.nodes.filter(n=>fromTypes.includes(n.type)).map(n=>n.id);
+  const target = new Set(PID.nodes.filter(n=>n.type===toType).map(n=>n.id));
+  if(!start.length || !target.size) return false;
+  const adj = {}; PID.wires.forEach(w=>{ (adj[w.a]=adj[w.a]||[]).push(w.b); (adj[w.b]=adj[w.b]||[]).push(w.a); });
+  const seen = new Set(start); const q = [...start];
+  while(q.length){ const n = q.shift(); if(target.has(n)) return true; (adj[n]||[]).forEach(m=>{ if(!seen.has(m)){ seen.add(m); q.push(m); } }); }
+  return false;
+}
+function pidCheck(){
+  const F = [];
+  const has = t => PID.nodes.some(n=>n.type===t);
+  if(!PID.nodes.length){ el('pidFindings').innerHTML=''; return; }
+  if(!has('inv')) F.push(['bad','No inverter on the sheet.']);
+  if(has('pv') && has('inv') && !pidReach(['pv'],'inv')) F.push(['bad','PV strings are not electrically connected to the inverter.']);
+  if(has('pv') && !has('spd')) F.push(['warn','No DC SPD — add surge protection on the PV side.']);
+  if(!has('gnd')) F.push(['bad','No grounding electrode block.']);
+  if(has('gnd') && !PID.wires.some(w=>w.kind==='pe')) F.push(['warn','Ground block present but no PE (green) wires bonded to it.']);
+  if(has('batt')){
+    const adjTypes = id => PID.wires.filter(w=>w.a===id||w.b===id).map(w=>{ const o = w.a===id?w.b:w.a; return (PID.nodes.find(n=>n.id===o)||{}).type; });
+    const bats = PID.nodes.filter(n=>n.type==='batt');
+    if(bats.some(b=>adjTypes(b.id).includes('inv'))) F.push(['warn','Battery is wired straight to the inverter — insert a DC breaker / Class-T fuse in between.']);
+  }
+  if(has('inv') && has('load') && !pidReach(['inv'],'load')) F.push(['warn','Loads are not fed from the inverter.']);
+  if(!F.length) F.push(['ok','P&ID checks passed — topology, protection and earthing look sound.']);
+  el('pidFindings').innerHTML = F.map(([s,m])=>`<span class="tag ${s}" style="margin:2px;display:inline-block">${m}</span>`).join('');
+  F.filter(f=>f[0]!=='ok').slice(0,3).forEach(([s,m])=>cyraLogAdd(s==='bad'?'bad':'warn','P&ID: '+m));
+}
+function pidSaveToProject(){
+  if(!PID.nodes.length) return toast('Sheet is empty','warn');
+  if(!DB.projects.length) return toast('No projects yet','warn');
+  modal('<h3>Save P&ID to project</h3>' + DB.projects.map(p=>
+    `<div class="kcard" onclick="pidAttach('${p.id}')"><div class="nm">${esc(p.name)}</div><div class="mt">${p.stage} · ${p.pid?'has P&ID — will overwrite':'no P&ID yet'}</div></div>`).join('') +
+    '<div class="modalBtns"><button class="btn ghost sm" onclick="modalClose()">Cancel</button></div>');
+}
+function pidAttach(pid_){
+  const p = DB.projects.find(x=>x.id===pid_); if(!p) return;
+  p.pid = { nodes:JSON.parse(JSON.stringify(PID.nodes)), wires:JSON.parse(JSON.stringify(PID.wires)), t:nowISO() };
+  PID.projectId = pid_;
+  queue('projects','upsert',p); save(); modalClose(); toast('P&ID saved to '+p.name);
+}
+function prPid(id){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return;
+  modalClose(); go('circuit');
+  if(p.pid && p.pid.nodes){ PID.nodes = JSON.parse(JSON.stringify(p.pid.nodes)); PID.wires = JSON.parse(JSON.stringify(p.pid.wires)); el('pidTag').textContent = p.name+' · saved '+String(p.pid.t).slice(0,10); }
+  else {
+    PID.nodes = []; PID.wires = [];
+    pidAutoGenFromCtx(prDiagCtx(p), p.name);
+  }
+  PID.projectId = id;
+  pidRender(); pidCheck();
+  setTimeout(()=>el('ccPidCard').scrollIntoView({behavior:'smooth'}), 150);
+}
+function pidAutoGenFromCtx(ctx, name){
+  const c = ctx.calc, t = c.type;
+  const perStr = Math.min(ctxPerString(ctx), c.nPanels), nStr = Math.ceil(c.nPanels/perStr);
+  const N = (type,x,y,label)=>{ const n={id:uid('N'),type,x,y,label:label||PID_TYPES[type][0]}; PID.nodes.push(n); return n.id; };
+  const W = (a,b,kind)=>PID.wires.push({id:uid('W'),a,b,kind});
+  const strIds=[];
+  for(let i=0;i<Math.min(nStr,3);i++){ const pv=N('pv',30,50+i*95,`STRING ${i+1} · ${perStr}×${ctx.pW}W`); const fu=N('fuse',160,55+i*95); W(pv,fu,'dcp'); strIds.push(fu); }
+  const comb=N('comb',290,120); strIds.forEach(f=>W(f,comb,'dcp'));
+  const spd=N('spd',290,220); W(comb,spd,'dcp');
+  const dcb=N('dcbrk',420,126); W(comb,dcb,'dcp');
+  const inv=N('inv',545,115,`${t==='grid'?'GT':'HYB'} INV ${c.invPick}kW`); W(dcb,inv,'dcp');
+  if(t!=='grid'){ const bb=N('dcbrk',560,240,'CLASS-T'); const bat=N('batt',545,380); W(inv,bb,'dcp'); W(bb,bat,'dcp'); }
+  const acb=N('acbrk',715,128); W(inv,acb,'ac');
+  if(t!=='off'){ const met=N('meter',840,45); const grd=N('grid',840,130); W(acb,met,'ac'); W(met,grd,'ac'); }
+  const dp=N('dp',840,230); W(acb,dp,'ac');
+  const ld=N('load',850,330); W(dp,ld,'ac');
+  const gn=N('gnd',300,470); W(spd,gn,'pe'); W(inv,gn,'pe'); W(dp,gn,'pe');
+  el('pidTag').textContent = (name||'') + ' · auto-generated';
+}
+
+/* project detail — now with diagram & P&ID buttons */
+function prDetail(id){
+  const p = DB.projects.find(x=>x.id===id); if(!p) return; prEnsureTasks(p);
+  const si = STAGES.indexOf(p.stage), pct = Math.round(100*si/(STAGES.length-1));
+  modal(`<h3>${esc(p.name)}</h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+    <span class="tag cyan">${p.stage}</span><span class="tag yel">${p.kwp||'?'} kWp</span>
+    <span class="tag dim">${{grid:'Grid-tie',hybrid:'Hybrid',off:'Off-grid'}[p.type]||p.type}</span>
+    <span class="tag ok">${peso(p.value)}</span>
+    ${p.pid?'<span class="tag cyan">P&ID ✔</span>':''}
+  </div>
+  <div style="font-size:12px;color:var(--dim)">${esc(p.client||'—')}${p.phone?' · +'+esc(p.phone):''} · created ${String(p.created).slice(0,10)}</div>
+  <div class="toolRow" style="margin-top:10px">
+    <button class="btn sm y" onclick="prDiagrams('${p.id}')">⚡ SLD & wiring diagrams</button>
+    <button class="btn sm ghost" onclick="prPid('${p.id}')">⬡ ${p.pid?'Open':'Create'} P&ID</button>
+  </div>
+  <label>Stage progress</label>
+  <div class="progress"><i style="width:${pct}%"></i></div>
+  <div class="toolRow" style="margin-top:8px">
+    <button class="btn sm ghost" ${si<=0?'disabled':''} onclick="prStage('${p.id}',-1)">◀ ${STAGES[si-1]||''}</button>
+    <span style="flex:1"></span>
+    <button class="btn sm y" ${si>=STAGES.length-1?'disabled':''} onclick="prStage('${p.id}',1)">${STAGES[si+1]||'Done'} ▶</button>
+  </div>
+  <label>Checklist — ${p.tasks.filter(x=>x.done).length}/${p.tasks.length} done</label>
+  <div style="max-height:180px;overflow-y:auto">${p.tasks.map((tk,i)=>
+    `<label class="switch" style="display:flex;padding:4px 0;border-bottom:1px solid rgba(28,58,110,.4)"><input type="checkbox" ${tk.done?'checked':''} onchange="prTaskToggle('${p.id}',${i})"><span style="${tk.done?'text-decoration:line-through;opacity:.55':''}">${esc(tk.t)}</span></label>`).join('')}</div>
+  <div class="toolRow" style="margin-top:6px"><input id="prNewTask" placeholder="Add task…"><button class="btn sm ghost" onclick="prTaskAdd('${p.id}')">+ Add</button></div>
+  ${p.notes?`<label>Notes</label><div style="font-size:12px;color:var(--dim);white-space:pre-wrap">${esc(p.notes)}</div>`:''}
+  <div class="modalBtns">
+    <button class="btn danger sm" onclick="prDelete('${p.id}')">Delete</button>
+    ${p.phone?`<button class="btn ghost sm" onclick="prNotify('${p.id}')">Notify client</button>`:''}
+    <button class="btn ghost sm" onclick="prOpenEdit('${p.id}')">Update details</button>
+    <button class="btn sm" onclick="modalClose()">Close</button>
+  </div>`);
+}
+prOpen = prDetail;
+/* keep PID palette ready when circuit page opens */
+const _ccRenderPrev = ccRender;
+ccRender = function(){ _ccRenderPrev(); pidInitPalette(); if(!el('pidSvg')) pidRender(); };
 
 </script>
 
